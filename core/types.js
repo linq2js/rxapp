@@ -1,0 +1,15 @@
+export let stateType = Symbol("state");
+export let templateType = Symbol("template");
+export let htmlType = Symbol("html");
+export let componentType = Symbol("component");
+export let directiveType = Symbol("directive");
+export let placeholderType = Symbol("placeholder");
+export let rendererType = Symbol("renderer");
+export let suspenseType = Symbol("suspense");
+export let textType = Symbol("text");
+export let listType = Symbol("list");
+export let storeType = Symbol("store");
+export let contextType = Symbol("context");
+export let loadedType = "loaded";
+export let loadingType = "loading";
+export let failedType = "failed";

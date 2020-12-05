@@ -1,0 +1,71 @@
+{
+  "name": "rxapp",
+  "version": "0.0.6",
+  "description": "The tiny framework for building reactive web app",
+  "main": "./core/index.js",
+  "scripts": {
+    "examples/performance": "parcel examples/performance/index.html --open --out-dir .temp/performance",
+    "examples/keyedList": "parcel examples/keyedList/index.html --open --out-dir .temp/keyedList",
+    "examples/rainbow": "parcel examples/rainbow/index.html --open --out-dir .temp/rainbow",
+    "examples/context": "parcel examples/context/index.html --open --out-dir .temp/context",
+    "examples/suspense": "parcel examples/suspense/index.html --open --out-dir .temp/suspense",
+    "test": "jest --runInBand --detectOpenHandles",
+    "build-browser": "rollup $INPUT --config --file $OUTPUT --output.name rxapp --format iife && gzip-size $OUTPUT",
+    "build-browser-compact": "cross-env INPUT=./browser/compact.js OUTPUT=./dist/compact.js npm run build-browser",
+    "build-browser-all": "npm run build-browser-compact",
+    "_publish": "npm run test && npm run build-browser-all && npm publish"
+  },
+  "files": [
+    "core",
+    "router",
+    "styled",
+    "dist"
+  ],
+  "keywords": [
+    "rxapp",
+    "reactive",
+    "dom",
+    "dom manipulation",
+    "dom mutating",
+    "dom modifier",
+    "dom update",
+    "html",
+    "element",
+    "node",
+    "frontend",
+    "framework",
+    "web",
+    "app",
+    "ui"
+  ],
+  "alias": {
+    "rxapp": "./core"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@babel/cli": "^7.10.1",
+    "@babel/core": "^7.7.7",
+    "@babel/plugin-transform-modules-commonjs": "^7.7.5",
+    "@babel/plugin-transform-runtime": "^7.7.6",
+    "@babel/preset-env": "^7.7.7",
+    "@babel/preset-react": "^7.7.4",
+    "@babel/runtime": "^7.7.7",
+    "@types/jest": "^25.2.3",
+    "@typescript-eslint/parser": "^3.7.1",
+    "babel-jest": "^26.2.2",
+    "babel-plugin-module-resolver": "^4.0.0",
+    "cross-env": "^7.0.2",
+    "gzip-size-cli": "^3.0.0",
+    "jest": "^26.2.2",
+    "node-fetch": "^2.6.0",
+    "prettier": "^2.0.5",
+    "rollup": "^2.33.1",
+    "uglify-js": "^3.11.5",
+    "rollup-plugin-terser": "^7.0.2",
+    "typescript": "^4.0.2",
+    "parcel-bundler": "^1.12.4",
+    "path-to-regexp": "^6.2.0",
+    "history": "^5.0.0",
+    "stylis": "^4.0.3"
+  }
+}

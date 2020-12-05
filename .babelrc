@@ -1,0 +1,44 @@
+{
+  "presets": [
+    [
+      "@babel/preset-react",
+      {
+        "targets": {
+          "node": true
+        }
+      }
+    ]
+  ],
+  "plugins": [
+    [
+      "@babel/plugin-transform-runtime",
+      {
+        "helpers": true,
+        "regenerator": true
+      }
+    ]
+  ],
+  "env": {
+    "test": {
+      "presets": ["@babel/preset-env", "jest"],
+      "plugins": [
+        "@babel/plugin-transform-modules-commonjs",
+        [
+          "@babel/plugin-transform-runtime",
+          {
+            "helpers": true,
+            "regenerator": true
+          }
+        ],
+        [
+          "module-resolver",
+          {
+            "alias": {
+              "rxapp": "./core"
+            }
+          }
+        ]
+      ]
+    }
+  }
+}
