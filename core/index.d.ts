@@ -80,8 +80,7 @@ export interface Provider<T>
   extends DynamicPart<{ value: T | (() => T); children?: any }> {}
 
 export interface ConsumeFn<T> extends Function {
-  (): T;
-  current: T;
+  (): { current: T };
 }
 
 /**
