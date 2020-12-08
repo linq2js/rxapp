@@ -26,6 +26,8 @@ export default function createTemplateRenderer(
   let bindings = [];
   let i = template.attachedNodes.length;
   let rootNode = { childNodes: nodes };
+  let unmounted = false;
+
   while (i--) {
     let attachedNode = template.attachedNodes[i];
     let node = attachedNode.path.reduce(
@@ -53,6 +55,14 @@ export default function createTemplateRenderer(
     }
   }
 
+  function updateBinding(binding, value) {
+    if (binding.type === directiveType) {
+      patchNode(context, binding, binding.marker, value);
+    } else {
+      mount(context, binding, value);
+    }
+  }
+
   return {
     id,
     type: templateType,
@@ -64,18 +74,29 @@ export default function createTemplateRenderer(
       let i = bindings.length;
       while (i--) {
         let binding = bindings[i];
-        if (binding.type === directiveType) {
-          patchNode(context, binding, binding.marker, binding.value);
+        binding.unsubscribe && binding.unsubscribe();
+        if (typeof binding.value === "function") {
+          binding.reactiveHandler = context.createReactiveHandler((result) =>
+            updateBinding(binding, result)
+          );
+          let reactiveFn = binding.value;
+          let reactiveBinding = () => binding.reactiveHandler(reactiveFn);
+          binding.unsubscribe = context.addBinding(reactiveBinding);
+          reactiveBinding();
         } else {
-          mount(context, binding, binding.value);
+          binding.unsubscribe = null;
+          updateBinding(binding, binding.value);
         }
       }
     },
     unmount() {
+      if (unmounted) return;
+      unmounted = true;
       let i = bindings.length;
       while (i--) {
         let binding = bindings[i];
-        binding.type === placeholderType && binding.renderer.unmount();
+        binding.unsubscribe && binding.unsubscribe();
+        binding.renderer && binding.renderer.unmount();
       }
       i = nodes.length;
       while (i--) nodes[i].remove();

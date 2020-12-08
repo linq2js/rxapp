@@ -10,6 +10,7 @@ export let textType = Symbol("text");
 export let listType = Symbol("list");
 export let storeType = Symbol("store");
 export let contextType = Symbol("context");
+export let reactiveType = Symbol("reactive");
 export let loadedType = "loaded";
 export let loadingType = "loading";
 export let failedType = "failed";

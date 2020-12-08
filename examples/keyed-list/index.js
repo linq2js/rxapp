@@ -1,6 +1,7 @@
-import { part, store } from "../../core";
+import { part, memo } from "../../core";
 
-const mainStore = store({ selected: 0, data: [] });
+let selected = 0;
+let data = [];
 
 const Button = part(
   ({ id, action, title }) => part`
@@ -13,18 +14,18 @@ const Button = part(
   </div>`
 );
 
-const Row = part(({ item }) => {
-  let id = item.id;
-  let selectDirective = { onclick: () => selectRow(id) };
-  let removeDirective = { onclick: () => remove(id) };
+const Row = part((props) => {
+  let selectDirective = { onclick: () => selectRow(props.item.id) };
+  let removeDirective = { onclick: () => remove(props.item.id) };
+  let selectedBinding = () => ({
+    style: props.item.id === selected && "font-weight: bold",
+  });
 
-  return () => {
-    let isSelected = mainStore.$select(state => state.selected === id);
-    return part`
-  <tr ${{ style: isSelected && "font-weight: bold" }}>
-    <td class="td-id col-md-1">${id}</td>
+  return part`
+  <tr ${selectedBinding}>
+    <td class="td-id col-md-1">${props.item.id}</td>
       <td class="col-md-4">
-        <a class="select" ${selectDirective}>${item.label}</a>
+        <a class="select" ${selectDirective}>${() => props.item.label}</a>
       </td>
       <td class="col-md-1">
         <button class="remove" ${removeDirective}>remove</button>
@@ -32,14 +33,14 @@ const Row = part(({ item }) => {
       <td class="col-md-6"></td>
   </tr>
   `;
-  };
 });
 
-const Table = part(() => () => {
+const Table = part(() => {
+  let getRows = memo((rows) => rows.map((item) => Row({ item, key: item.id })));
   return part`
   <table class="table table-hover table-striped test-data">
     <tbody id="tbody">
-      ${mainStore.data.map((item) => Row({ item, key: item.id }))}
+      ${() => getRows(data)}
     </tbody>
   </table>
   `;
@@ -98,13 +99,14 @@ const App = part`
   ${Table}`;
 
 App.mount("#app");
-
+let performanceLogElement = document.createTextNode("");
+document.body.insertBefore(performanceLogElement, document.body.firstChild);
 function performanceTest(name, callback) {
   const start = Date.now();
   const end = () =>
     setTimeout(() => {
       const elapsed = Date.now() - start;
-      console.log(name, elapsed);
+      performanceLogElement.nodeValue = `${name}: ${elapsed}`;
     });
 
   if (callback) {
@@ -117,16 +119,13 @@ function performanceTest(name, callback) {
 
 function run(num) {
   return performanceTest("run" + num, () => {
-    mainStore.selected = 0;
-    mainStore.data = buildData(num);
+    selected = 0;
+    data = buildData(num);
   });
 }
 
 function add() {
-  return performanceTest(
-    "add",
-    () => (mainStore.data = mainStore.data.concat(buildData(1000)))
-  );
+  return performanceTest("add", () => (data = data.concat(buildData(1000))));
 }
 
 function update(item, label) {
@@ -134,34 +133,32 @@ function update(item, label) {
     if (item) {
       item.label += "!!!";
     } else {
-      mainStore.data.forEach(
-        (item, index) => index % 10 === 0 && (item.label += "!!!")
-      );
+      data.forEach((item, index) => index % 10 === 0 && (item.label += "!!!"));
     }
   });
 }
 
 function selectRow(id) {
-  return performanceTest("selectRow", () => (mainStore.selected = id));
+  return performanceTest("selectRow", () => (selected = id));
 }
 
 function remove(id) {
   return performanceTest(
     "remove",
-    () => (mainStore.data = mainStore.data.filter((x) => x.id !== id))
+    () => (data = data.filter((x) => x.id !== id))
   );
 }
 
 function clear() {
   return performanceTest("clear", () => {
-    mainStore.selected = 0;
-    mainStore.data = [];
+    selected = 0;
+    data = [];
   });
 }
 
 function swapRows() {
   return performanceTest("swap", () => {
-    mainStore.data = ((data) => {
+    data = ((data) => {
       if (data.length > 2) {
         const newData = data.slice();
         let temp = newData[1];
@@ -170,7 +167,7 @@ function swapRows() {
         return newData;
       }
       return data;
-    })(mainStore.data);
+    })(data);
   });
 }
 
@@ -239,12 +236,12 @@ let nextId = 1;
 function buildData(count) {
   const data = new Array(count);
   for (let i = 0; i < count; i++) {
-    data[i] = store({
+    data[i] = {
       id: "item-" + nextId++,
       label: `${A[random(A.length)]} ${C[random(C.length)]} ${
         N[random(N.length)]
       }`,
-    });
+    };
   }
   return data;
 }

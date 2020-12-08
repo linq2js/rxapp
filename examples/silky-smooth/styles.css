@@ -1,0 +1,80 @@
+* {
+  box-sizing: border-box;
+}
+body {
+  color: #37393b;
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "SF UI Text", "Helvetica Neue",
+    "Roboto", "Arial Nova", "Segoe UI", "Arial", sans-serif;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.6;
+}
+header {
+  text-align: center;
+  width: 100%;
+  padding: 2em;
+}
+header,
+footer,
+section,
+div,
+nav {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: stretch;
+}
+h1 {
+  font-size: 2.6em;
+  font-weight: 400;
+}
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: #191919;
+  line-height: 1.25;
+  margin: 0;
+}
+a {
+  text-decoration: none;
+}
+.heading a.anchor {
+  display: inline-block;
+  cursor: pointer;
+  position: absolute;
+  text-align: center;
+  margin-left: -1.1em;
+  padding: 0 0.3em;
+  opacity: 0;
+  color: #eceef0;
+}
+h1 strong {
+  color: #7d0;
+  font-weight: 600;
+}
+.animated-sin-wave {
+  position: relative;
+  height: 150px;
+  width: 100%;
+  overflow: hidden;
+}
+
+.animated-sin-wave > .bar {
+  position: absolute;
+  height: 100%;
+  border-radius: 50%;
+  max-width: 10px;
+}
+
+.animated-sin-wave-description {
+  width: 100%;
+  text-align: center;
+  font-size: 0.8em;
+  color: #747678;
+  padding: 2em;
+}

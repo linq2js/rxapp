@@ -1,24 +1,17 @@
 import createTemplate from "./createTemplate";
 import { mountMethod } from "./mount";
 import { componentType } from "./types";
-import { assign, emptyObject, isArray, slice, unset } from "./util";
+import { assign, emptyObject, isArray, slice } from "./util";
 
-export default function createComponent(render, options = emptyObject) {
-  let { lazy, pure, fallback } = options;
+export default function createComponent(render, { forceUpdate } = emptyObject) {
   let defWithoutProps = {
     key: null,
     ref: null,
-    lazy,
-    fallback,
-    hasFallback: "fallback" in options,
-    pure,
     type: componentType,
     render,
     props: emptyObject,
     mount: mountMethod,
-    withProps(newProps) {
-      return createComponent(render, options)(newProps);
-    },
+    forceUpdate,
   };
   return assign(function () {
     // children template

@@ -2,7 +2,7 @@ export default function getPromiseLoadable(promise) {
   let loadable = promise.$$loadable;
   if (!loadable) {
     promise.$$loadable = loadable = { status: "loading" };
-    promise.then(
+    loadable.promise = promise.then(
       (result) => {
         loadable.value = result;
         loadable.status = "loaded";

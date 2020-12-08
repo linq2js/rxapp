@@ -1,30 +1,37 @@
-import { part, store, context } from "rxapp";
+import { part, context } from "../../core";
 
-const [LanguageProvider, currentLanguage] = context("unknown");
+const [LanguageProvider, consumeLanguage] = context("unknown");
 
-const StaticCurrentLanguage = part(
-  () => part`<h2>Static: ${currentLanguage()}</h2>`
-);
-const DynamicCurrentLanguage = part(() => () =>
-  part`<h2>Dynamic: ${currentLanguage()}</h2>`
-);
+const StaticCurrentLanguage = part(() => {
+  let language = consumeLanguage();
+  return part`<h2>Static: ${language.current}</h2>`;
+});
+const DynamicCurrentLanguage = part(() => {
+  let language = consumeLanguage();
+  return part`<h2>Dynamic1: ${() => language.current}</h2>`;
+});
+const DynamicCurrentLanguage2 = part(() => {
+  return part`<h2>Dynamic2: ${consumeLanguage()}</h2>`;
+});
 
 const App = part(() => {
-  let state = store({ lang: "en" });
+  let lang = "en";
   return () => part`
     <h1>Choose language</h1>
-    <h2>Current: ${state.lang}</h2>
-    <button ${{ onclick: () => (state.lang = "en") }}>English</button>
-    <button ${{ onclick: () => (state.lang = "es") }}>Spanish</button>
+    <h2>Current: ${() => lang}</h2>
+    <button ${{ onclick: () => (lang = "en") }}>English</button>
+    <button ${{ onclick: () => (lang = "es") }}>Spanish</button>
     <hr/>
     <h1>Without context provider</h1>
     ${StaticCurrentLanguage}
     ${DynamicCurrentLanguage}
+    ${DynamicCurrentLanguage2}
     <hr/>
     <h1>With context provider</h1>
-    ${LanguageProvider({ value: state.lang })`
+    ${LanguageProvider({ value: () => lang })`
       ${StaticCurrentLanguage}
       ${DynamicCurrentLanguage}
+      ${DynamicCurrentLanguage2}
     `}
 `;
 });

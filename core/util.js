@@ -7,6 +7,10 @@ export let assign = Object.assign;
 export let slice = emptyArray.slice;
 export let indexOf = emptyArray.indexOf;
 export let doc = typeof document === "undefined" ? null : document;
-export function invokeAll(funcs, payload) {
-  for (let i = 0; i < funcs.length; i++) funcs[i](payload);
+export function invokeAll(funcs, payload, prop) {
+  for (let i = 0; i < funcs.length; i++) {
+    let func = prop ? funcs[i][prop] : funcs[i];
+    if (!func) continue;
+    func(payload);
+  }
 }

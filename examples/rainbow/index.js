@@ -1,5 +1,4 @@
-import { part, store } from "rxapp";
-import { assign } from "../../core/util";
+import { part, memo } from "../../core";
 
 const Layout = {
   PHYLLOTAXIS: 0,
@@ -17,50 +16,48 @@ const LAYOUT_ORDER = [
 ];
 
 const theta = Math.PI * (3 - Math.sqrt(5));
-const mainStore = store({
-  numPoints: 1000,
-  step: 0,
-  layout: 0,
-  numSteps: 60 * 2,
-  async: false,
-  points: makePoints(1000),
-});
+let numPoints = 1000;
+let step = 0;
+let layout = 0;
+let numSteps = 60 * 2;
+let async = false;
+let points = makePoints();
 
-const Controls = part(() => () => {
-  let { numPoints, async } = mainStore;
+const Controls = (() => {
+  let numPointsBinding = () => ({ value: numPoints, onchange: handleUIUpdate });
+  let asyncBinding = () => ({ checked: async, onchange: handleUIUpdate });
+
   return part`
   <div class="controls">
     # Points
-    <input name="numPoints" type="range" min=10 max=10000 ${{
-      value: numPoints,
-      onchange: handleUIUpdate,
-    }}>
-    ${numPoints}
+    <input name="numPoints" type="range" min=10 max=10000 ${numPointsBinding}>
+    ${() => numPoints}
     <label>
-      <input name="async" type="checkbox" ${{
-        checked: async,
-        onchange: handleUIUpdate,
-      }}>
+      <input name="async" type="checkbox" ${asyncBinding}>
       Async
     </label>
   </div>
   `;
-});
+})();
 
-const Point = part(({ color, position }) => () => {
-  const attr = {
-    fill: color,
-    transform: `translate(${position.value.x}, ${position.value.y})`,
-  };
-  return part`<rect class="point" ${{ attr }}/>`;
-});
+const createReact = (key, point) => {
+  const fill$ = { "@fill": point.color };
+  const transform$ = () => ({
+    "@transform": `translate(${point.x}, ${point.y})`,
+  });
+  return part.key(key)`<rect class="point" ${fill$} ${transform$}/>`;
+};
 
-const Canvas = part(() => () => part`
+const Canvas = part(() => {
+  const getPoints = memo((points) =>
+    points.map((point, index) => createReact(index, point))
+  );
+
+  return part`
   <svg class="demo">
-    <g>${mainStore.points.map((point, index) =>
-      Point({ key: index, ...point })
-    )}</g>
-  </svg>`);
+    <g>${() => getPoints(points)}</g>
+  </svg>`;
+});
 
 const App = part`
 <div class="app-wrapper">
@@ -78,19 +75,21 @@ const App = part`
 function handleUIUpdate(e) {
   switch (e.target.name) {
     case "async":
-      mainStore.async = e.target.checked;
+      async = e.target.checked;
       break;
     case "numPoints":
-      mainStore.numPoints = parseInt(e.target.value, 10);
-      mainStore.points = makePoints(mainStore.numPoints);
+      numPoints = parseInt(e.target.value, 10);
+      points = makePoints();
       break;
     default:
   }
+
+  app.update();
 }
 
 // utilities
 
-function makePoints(numPoints) {
+function makePoints() {
   let phyllotaxis = genPhyllotaxis(numPoints);
   let grid = genGrid(numPoints);
   let wave = genWave(numPoints);
@@ -102,7 +101,8 @@ function makePoints(numPoints) {
     points.push(
       setAnchors(
         {
-          position: store({ value: { x: 0, y: 0 } }),
+          x: 0,
+          y: 0,
           color: d3.interpolateViridis(i / numPoints),
         },
         i,
@@ -114,7 +114,6 @@ function makePoints(numPoints) {
 }
 
 function next() {
-  let { step, layout, points, numSteps } = mainStore;
   step = (step + 1) % numSteps;
 
   if (step === 0) {
@@ -134,17 +133,11 @@ function next() {
   const nyProp = yForLayout(nextLayout);
 
   points.forEach((point) => {
-    point.position.value = {
-      x: lerp(point, pct, pxProp, nxProp) || 0,
-      y: lerp(point, pct, pyProp, nyProp) || 0,
-    };
+    point.x = lerp(point, pct, pxProp, nxProp) || 0;
+    point.y = lerp(point, pct, pyProp, nyProp) || 0;
   });
 
-  Object.assign(mainStore, {
-    step,
-    layout,
-  });
-
+  app.update();
   requestAnimationFrame(next);
 }
 
@@ -153,7 +146,7 @@ function setAnchors(p, index, { grid, wave, spiral, phyllotaxis }) {
   const [wx, wy] = project(wave(index));
   const [sx, sy] = project(spiral(index));
   const [px, py] = project(phyllotaxis(index));
-  assign(p, { gx, gy, wx, wy, sx, sy, px, py });
+  Object.assign(p, { gx, gy, wx, wy, sx, sy, px, py });
   return p;
 }
 
@@ -234,9 +227,10 @@ function project(vector) {
   return translate([ww, wh], scale(Math.min(wh, ww), vector));
 }
 
-App.mount({
+const app = App.mount({
   container: "#app",
 });
+
 next();
 
 (function () {

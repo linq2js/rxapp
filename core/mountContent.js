@@ -1,6 +1,7 @@
 import createComponentRenderer from "./createComponentRenderer";
 import createHtmlRenderer from "./createHtmlRenderer";
 import createListRenderer from "./createListRenderer";
+import createReactiveRenderer from "./createReactiveRenderer";
 import createTemplateRenderer from "./createTemplateRenderer";
 import createTextRenderer from "./createTextRenderer";
 import {
@@ -10,22 +11,23 @@ import {
   listType,
   rendererType,
   htmlType,
-  contextType,
+  reactiveType,
 } from "./types";
 import { isArray } from "./util";
 
 export default function mountContent(context, data, content) {
-  while (typeof content === "function") content = content();
+  while (typeof content === "function" && content.type) content = content();
 
   if (data.content === content) return;
 
-  data.content = content;
-
-  let type = !content
-    ? textType
-    : isArray(content)
-    ? listType
-    : content.type || textType;
+  let type =
+    typeof content === "function"
+      ? reactiveType
+      : !content
+      ? textType
+      : isArray(content)
+      ? listType
+      : content.type || textType;
 
   if (type === rendererType) return content.render(mountContent, context, data);
   if (data.renderer) {
@@ -39,8 +41,12 @@ export default function mountContent(context, data, content) {
     }
   }
 
+  data.content = content;
+
   if (!data.renderer) {
-    data.renderer = (type === componentType
+    data.renderer = (type === reactiveType
+      ? createReactiveRenderer
+      : type === componentType
       ? createComponentRenderer
       : type === templateType
       ? createTemplateRenderer

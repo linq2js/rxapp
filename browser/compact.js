@@ -1,17 +1,7 @@
-import {
-  part,
-  renderer,
-  store,
-  context,
-  effect,
-  Suspense,
-} from "../core/index";
+import { part, memo, context } from "../core/index";
 
 export default {
   part,
-  renderer,
-  store,
+  memo,
   context,
-  effect,
-  Suspense,
 };

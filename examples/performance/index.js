@@ -1,18 +1,18 @@
-import { part, store } from "../../core";
+import { part } from "../../core";
 
 const startTime = Date.now();
-const runningInfoStore = store({
-  numColorUpdates: 0,
-  secondsRunning: 0,
-});
 const duration = 30000;
 const numElements = 100;
-const colorStore = store({});
+const colors = {};
+let numColorUpdates = 0;
+let secondsRunning = 0;
+let secondsRunningBinding = () => secondsRunning;
+let numColorUpdatesBinding = () => numColorUpdates;
+let colorsPerSecondBinding = () => Math.floor(numColorUpdates / secondsRunning);
 
-const Cell = part(({ n }) => () => {
-  return part`<div style="width: 30px; height: 30px; text-align: center; padding: 10px; float: left;" ${{
-    style: { backgroundColor: colorStore[n] },
-  }}>${n}</div>`;
+const Cell = part(({ n }) => {
+  const cellStyle = () => ({ style: { backgroundColor: colors[n] } });
+  return part`<div style="width: 30px; height: 30px; text-align: center; padding: 10px; float: left;" ${cellStyle}>${n}</div>`;
 });
 
 const Matrix = part`<div id="matrix" style="width: 500px">${new Array(
@@ -22,15 +22,11 @@ const Matrix = part`<div id="matrix" style="width: 500px">${new Array(
   .map((_, n) => Cell({ n, key: n }))}</div>`;
 
 const Info = part(() => {
-  return () => {
-    const { numColorUpdates, secondsRunning } = runningInfoStore;
-    const colorsPerSecond = Math.floor(numColorUpdates / secondsRunning);
-    return part`
-      <h1 style="font-weight: 100">${secondsRunning}</h1>
-      <div>${numColorUpdates} colors</div>
-      <div>${colorsPerSecond} colors per second</div>
+  return part`
+      <h1 style="font-weight: 100">${secondsRunningBinding}</h1>
+      <div>${numColorUpdatesBinding} colors</div>
+      <div>${colorsPerSecondBinding} colors per second</div>
   `;
-  };
 });
 
 const App = part`
@@ -43,17 +39,15 @@ const App = part`
 </div>
 `;
 
-App.mount("#app");
+let app = App.mount("#app");
 
-let numColorUpdates = 0;
 function setColor(n) {
-  colorStore[n] = `#${Math.floor(Math.random() * 16777215).toString(16)}`;
+  colors[n] = `#${Math.floor(Math.random() * 16777215).toString(16)}`;
+  app.update();
   numColorUpdates++;
-  runningInfoStore.secondsRunning = (Date.now() - startTime) / 1000;
-  runningInfoStore.numColorUpdates = numColorUpdates;
-  if (Date.now() - startTime >= duration) {
-    return;
-  }
+  secondsRunning = (Date.now() - startTime) / 1000;
+  app.update();
+  if (Date.now() - startTime >= duration) return;
   setTimeout(() => setColor(n), 0);
 }
 

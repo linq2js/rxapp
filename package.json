@@ -1,11 +1,14 @@
 {
   "name": "rxapp",
-  "version": "0.0.6",
+  "version": "0.0.8",
   "description": "The tiny framework for building reactive web app",
   "main": "./core/index.js",
   "scripts": {
+    "examples/basic": "parcel examples/basic/index.html --open --out-dir .temp/basic",
+    "examples/silky-smooth": "parcel examples/silky-smooth/index.html --open --out-dir .temp/silky-smooth",
+    "examples/preact-rainbow": "parcel examples/preact-rainbow/index.html --open --out-dir .temp/preact-rainbow",
     "examples/performance": "parcel examples/performance/index.html --open --out-dir .temp/performance",
-    "examples/keyedList": "parcel examples/keyedList/index.html --open --out-dir .temp/keyedList",
+    "examples/keyed-list": "parcel examples/keyed-list/index.html --open --out-dir .temp/keyed-list",
     "examples/rainbow": "parcel examples/rainbow/index.html --open --out-dir .temp/rainbow",
     "examples/context": "parcel examples/context/index.html --open --out-dir .temp/context",
     "examples/suspense": "parcel examples/suspense/index.html --open --out-dir .temp/suspense",
@@ -19,6 +22,7 @@
     "core",
     "router",
     "styled",
+    "async",
     "dist"
   ],
   "keywords": [
@@ -56,16 +60,18 @@
     "babel-plugin-module-resolver": "^4.0.0",
     "cross-env": "^7.0.2",
     "gzip-size-cli": "^3.0.0",
+    "history": "^5.0.0",
     "jest": "^26.2.2",
+    "less": "^3.12.2",
     "node-fetch": "^2.6.0",
-    "prettier": "^2.0.5",
-    "rollup": "^2.33.1",
-    "uglify-js": "^3.11.5",
-    "rollup-plugin-terser": "^7.0.2",
-    "typescript": "^4.0.2",
     "parcel-bundler": "^1.12.4",
     "path-to-regexp": "^6.2.0",
-    "history": "^5.0.0",
-    "stylis": "^4.0.3"
+    "prettier": "^2.0.5",
+    "rollup": "^2.33.1",
+    "rollup-plugin-terser": "^7.0.2",
+    "@rollup/plugin-babel": "^5.2.2",
+    "stylis": "^4.0.3",
+    "typescript": "^4.0.2",
+    "uglify-js": "^3.11.5"
   }
 }
