@@ -59,7 +59,7 @@ const App = part`
 const app = App.mount("#app");
 
 function updateBarCount() {
-  barCount = Math.floor(window.innerWidth / 4);
+  barCount = Math.floor(window.innerWidth / 3);
   barWidth = 100 / barCount;
 }
 

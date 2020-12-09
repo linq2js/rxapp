@@ -1,7 +1,1 @@
-import { part, memo, context } from "../core/index";
-
-export default {
-  part,
-  memo,
-  context,
-};
+export { default } from "./coreExports";

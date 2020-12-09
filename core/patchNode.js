@@ -13,6 +13,13 @@ export default function patchNode(context, data, node, props) {
     let prevPropValue = data.props.get(prop);
     if (propValue === prevPropValue) continue;
     data.props.set(prop, propValue);
+    if (prop === "ref") {
+      propValue &&
+        (typeof propValue === "function"
+          ? propValue(node)
+          : (propValue.current = node));
+      continue;
+    }
     if (prop === "text") {
       node.textContent = propValue;
       continue;

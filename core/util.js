@@ -1,3 +1,5 @@
+import { componentType, templateType } from "./types";
+
 export let emptyObject = {};
 export let emptyArray = [];
 export let noop = () => {};
@@ -13,4 +15,12 @@ export function invokeAll(funcs, payload, prop) {
     if (!func) continue;
     func(payload);
   }
+}
+
+export function isComponent(value) {
+  return value && value.type === componentType;
+}
+
+export function isTemplate(value) {
+  return value && value.type === templateType;
 }

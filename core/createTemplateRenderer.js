@@ -56,6 +56,7 @@ export default function createTemplateRenderer(
   }
 
   function updateBinding(binding, value) {
+    if (unmounted) return;
     if (binding.type === directiveType) {
       patchNode(context, binding, binding.marker, value);
     } else {
@@ -76,9 +77,13 @@ export default function createTemplateRenderer(
         let binding = bindings[i];
         binding.unsubscribe && binding.unsubscribe();
         if (typeof binding.value === "function") {
-          binding.reactiveHandler = context.createReactiveHandler((result) =>
-            updateBinding(binding, result)
-          );
+          binding.reactiveHandler = context.createReactiveHandler((result) => {
+            if (binding.updateToken === context.updateToken) {
+              return;
+            }
+            binding.updateToken = context.updateToken;
+            updateBinding(binding, result);
+          });
           let reactiveFn = binding.value;
           let reactiveBinding = () => binding.reactiveHandler(reactiveFn);
           binding.unsubscribe = context.addBinding(reactiveBinding);

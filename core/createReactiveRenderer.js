@@ -8,21 +8,26 @@ export default function createReactiveRenderer(
   reactiveFn
 ) {
   let inner = createData(marker, "reactive");
+  let unmounted = false;
 
-  let reactiveHandler = context.createReactiveHandler((result) =>
-    mount(context, inner, result)
-  );
+  let reactiveHandler = context.createReactiveHandler((result) => {
+    if (unmounted) return;
+    mount(context, inner, result);
+  });
   let unsubscribe = context.addBinding(update);
 
   // update();
 
   function update() {
+    if (unmounted) return;
     reactiveHandler(reactiveFn);
   }
 
   return {
     type: reactiveType,
     unmount() {
+      if (unmounted) return;
+      unmounted = true;
       unsubscribe();
       inner.unmount();
     },

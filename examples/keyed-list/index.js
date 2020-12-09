@@ -36,7 +36,7 @@ const Row = part((props) => {
 });
 
 const Table = part(() => {
-  let getRows = memo((rows) => rows.map((item) => Row({ item, key: item.id })));
+  let getRows = memo.list((item) => Row({ item, key: item.id }));
   return part`
   <table class="table table-hover table-striped test-data">
     <tbody id="tbody">

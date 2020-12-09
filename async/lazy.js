@@ -12,18 +12,27 @@ import { loadingType } from "../core/types";
 export default function lazy(importFn, fallback) {
   let loadable;
   let hasFallback = arguments.length > 1;
+
   return createComponent(
     (props) => {
-      if (!loadable) {
-        loadable = getPromiseLoadable(importFn(...arguments));
-      }
+      if (!loadable) loadable = getPromiseLoadable(importFn(...arguments));
       // create reactive
       return createCustomRenderer((mount, context, data) => {
+        function render() {
+          mount(
+            context,
+            data,
+            (loadable.value.default || loadable.value)(props)
+          );
+        }
         if (loadable.status === loadingType) {
-          if (hasFallback) return mount(context, data, fallback);
+          if (hasFallback) {
+            loadable.promise.then(render);
+            return mount(context, data, fallback);
+          }
           throw loadable.promise;
         }
-        mount(context, data, loadable.value.default(props));
+        render();
       });
     },
     { forceUpdate: true }
