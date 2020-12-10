@@ -2,6 +2,7 @@ export interface ApplicationContext {
   dispatch<TPayload = never, TResult = void>(
     action: (payload?: TPayload) => TResult
   ): TResult;
+  action<T>(action: T): T;
   update(): void;
 }
 
@@ -52,11 +53,19 @@ export interface StaticPart {
   mount(options?: MountOptions): Application;
 }
 
+export interface PartOptions {
+  lazy?: boolean;
+}
+
 /**
  * create a part with specified renderFn
  * @param renderFn
+ * @param options
  */
-export function part<TProps>(renderFn: RenderFn<TProps>): DynamicPart<TProps>;
+export function part<TProps>(
+  renderFn: RenderFn<TProps>,
+  options?: PartOptions
+): DynamicPart<TProps>;
 
 /**
  * create a part that is based on tagged string literal

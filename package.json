@@ -15,6 +15,7 @@
     "examples/suspense": "parcel examples/suspense/index.html --open --out-dir .temp/suspense",
     "examples/router": "parcel examples/router/index.html --open --out-dir .temp/router",
     "examples/router-nested": "parcel examples/router-nested/index.html --open --out-dir .temp/router-nested",
+    "examples/crypto-search": "parcel examples/crypto-search/index.html --open --out-dir .temp/crypto-search",
     "test": "jest --runInBand --detectOpenHandles",
     "build-browser": "rollup $INPUT --config --file $OUTPUT --output.name rxapp --format iife && gzip-size $OUTPUT",
     "build-browser-core": "cross-env INPUT=./browser/core.js OUTPUT=./dist/core.js npm run build-browser",

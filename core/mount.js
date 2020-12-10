@@ -12,7 +12,8 @@ let enqueue =
 
 export default function mount(content, options) {
   if (typeof options === "string") options = { container: options };
-  let { container = doc.body, init /*, hydrate*/ } = options || emptyObject;
+  let { container = doc.body, init /*, hydrate*/, store } =
+    options || emptyObject;
   let emitters = createEmitter();
   let updateEmitter = emitters.get("update");
   let postUpdateEmitter = emitters.get("post_update");
@@ -63,6 +64,7 @@ export default function mount(content, options) {
   function dispatch(action, payload) {
     try {
       let result = action(payload);
+      if (typeof result === "function") result = result(context);
       if (isPromiseLike(result)) return result.finally(update);
       return result;
     } finally {
@@ -70,9 +72,14 @@ export default function mount(content, options) {
     }
   }
 
+  if (store) {
+    store.subscribe(update);
+    context.select = (selector) => selector(store.getState());
+  }
+
   mountContent(context, data, content);
 
-  typeof init === "function" && init();
+  typeof init === "function" && dispatch(init);
 
   return { update, dispatch };
 }

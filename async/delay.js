@@ -4,6 +4,6 @@
  * @param value
  * @return {Promise<unknown>}
  */
-export default function delay(ms, value) {
+export default function delay(ms = 0, value) {
   return new Promise((resolve) => setTimeout(resolve, ms, value));
 }

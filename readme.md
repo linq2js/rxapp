@@ -1,6 +1,6 @@
 # rxapp
 
-The tiny framework (4K GZipped) for building reactive web app
+The tiny framework (5K GZipped) for building reactive web app
 
 ## Counter App
 
