@@ -3,7 +3,7 @@ import { mountMethod } from "./mount";
 import { componentType } from "./types";
 import { assign, emptyObject, isArray, slice } from "./util";
 
-export default function createComponent(render, { forceUpdate } = emptyObject) {
+export default function createComponent(render, { forceUpdate, lazy } = emptyObject) {
   let defWithoutProps = {
     key: null,
     ref: null,
@@ -12,6 +12,7 @@ export default function createComponent(render, { forceUpdate } = emptyObject) {
     props: emptyObject,
     mount: mountMethod,
     forceUpdate,
+    lazy,
   };
   return assign(function () {
     // children template

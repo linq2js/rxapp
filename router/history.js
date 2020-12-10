@@ -53,8 +53,9 @@ function getLocation() {
 }
 
 function redirect(options) {
-  if (typeof options === "string")
+  if (typeof options === "string") {
     options = { to: options, state: arguments[1] };
+  }
   let { to, replace = false, state = null } = options || emptyObject;
   if (to === location.pathname) return;
   console.log(to, location.pathname, state);

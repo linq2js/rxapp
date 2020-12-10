@@ -35,13 +35,27 @@ const Row = part((props) => {
   `;
 });
 
+const RowGroup = part(
+  (props) => {
+    return part`<tbody id="tbody">${() =>
+      props.items.map((item) => Row({ item, key: item.id }))}</tbody>`;
+  },
+  { lazy: true }
+);
+
 const Table = part(() => {
-  let getRows = memo.list((item) => Row({ item, key: item.id }));
+  let getGroups = (data) => {
+    data = data.slice();
+    let groups = [];
+    while (data.length) {
+      let items = data.splice(0, 200);
+      groups.push(RowGroup({ key: items[0].key, items }));
+    }
+    return groups;
+  };
   return part`
   <table class="table table-hover table-striped test-data">
-    <tbody id="tbody">
-      ${() => getRows(data)}
-    </tbody>
+    ${() => getGroups(data)}
   </table>
   `;
 });
@@ -245,3 +259,17 @@ function buildData(count) {
   }
   return data;
 }
+
+(function () {
+  var script = document.createElement("script");
+  script.onload = function () {
+    var stats = new Stats();
+    document.body.appendChild(stats.dom);
+    requestAnimationFrame(function loop() {
+      stats.update();
+      requestAnimationFrame(loop);
+    });
+  };
+  script.src = "//cdn.jsdelivr.net/gh/Kevnz/stats.js/build/stats.min.js";
+  document.head.appendChild(script);
+})();

@@ -4,7 +4,6 @@ import {
   Router,
   useRouterContext,
   link,
-  redirect,
   location,
   Redirect,
 } from "../../router";

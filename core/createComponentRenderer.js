@@ -2,6 +2,7 @@ import arrayEqual from "./arrayEqual";
 import createData from "./createData";
 import createReadonlyProxy from "./createReadonlyProxy";
 import globalContext from "./globalContext";
+import addLazyElement from "./addLazyElement";
 import { componentType } from "./types";
 import { invokeAll } from "./util";
 
@@ -11,14 +12,17 @@ export default function createComponentRenderer(
   marker,
   content
 ) {
-  let { render, props, forceUpdate } = content;
+  let { render, props, forceUpdate, lazy } = content;
   let inner = createData(marker, "component");
   let currentProps = props;
   let unmounted = false;
   let propsProxy;
   let effects = [];
   let mounted = false;
-  let unsubscribe;
+  let removeUpdateListener;
+  let removeScrollUpdateListener;
+  let isVisibleInViewport = !lazy;
+  let componentContext = { ...context };
   let component = (globalContext.component = {
     get props() {
       if (!propsProxy) propsProxy = createReadonlyProxy(() => currentProps);
@@ -30,10 +34,10 @@ export default function createComponentRenderer(
     !unmounted && mount(context, inner, result);
     if (!mounted) {
       mounted = true;
-      unsubscribe = context.addBinding(runEffects);
+      removeUpdateListener = context.addBinding(runEffects);
       runEffects();
     }
-  });
+  }, componentContext);
 
   function runEffects() {
     if (unmounted) return;
@@ -55,20 +59,29 @@ export default function createComponentRenderer(
     effects.push([effect, deps]);
   }
 
+  if (lazy) {
+    removeScrollUpdateListener = addLazyElement(marker, () =>
+      reactiveHandler(render)
+    );
+  }
+
   return {
     type: componentType,
     render,
     unmount() {
       if (unmounted) return;
       unmounted = true;
-      unsubscribe && unsubscribe();
+      removeUpdateListener && removeUpdateListener();
+      removeScrollUpdateListener && removeScrollUpdateListener();
       invokeAll(effects, undefined, "dispose");
       inner.unmount();
     },
     reorder: inner.reorder,
     update({ ref, props }) {
       currentProps = props;
-      (!mounted || forceUpdate) && reactiveHandler(render);
+      isVisibleInViewport &&
+        (!mounted || forceUpdate) &&
+        reactiveHandler(render);
     },
   };
 }

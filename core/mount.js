@@ -15,6 +15,7 @@ export default function mount(content, options) {
   let { container = doc.body, init /*, hydrate*/ } = options || emptyObject;
   let emitters = createEmitter();
   let updateEmitter = emitters.get("update");
+  let postUpdateEmitter = emitters.get("post_update");
   let data = {
     marker: createMarker("app"),
   };
@@ -26,6 +27,7 @@ export default function mount(content, options) {
     addBinding: updateEmitter.on,
     createReactiveHandler,
     updateToken: Symbol(),
+    action: (fn) => (payload) => dispatch(fn, payload),
   };
   if (typeof container === "string") container = doc.querySelector(container);
   container.innerHTML = "";
@@ -37,15 +39,19 @@ export default function mount(content, options) {
     enqueue(() => {
       if (token !== context.updateToken) return;
       updateEmitter.emit();
+      enqueue(() => {
+        if (token !== context.updateToken) return;
+        postUpdateEmitter.emit();
+      });
     });
   }
 
-  function createReactiveHandler(processor) {
+  function createReactiveHandler(processor, customContext = context) {
     let component = globalContext.component;
     let asyncHandler = context.asyncHandler;
     return function (fn) {
       try {
-        let result = fn(component.props, context);
+        let result = fn(component.props, customContext);
         return processor(result);
       } catch (e) {
         if (isPromiseLike(e) && asyncHandler) return asyncHandler(e);

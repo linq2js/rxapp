@@ -73,6 +73,10 @@ export function part(
  * @param fn
  */
 export function memo<T extends Function>(fn: T): T;
+export function memo<T, TResult>(
+  selector: (...args: any[]) => T,
+  fn: (result?: T, ...args: any[]) => TResult
+): (...args: any[]) => TResult;
 
 export function effect(func: Function, deps?: () => any[]): void;
 

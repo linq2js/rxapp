@@ -9,6 +9,7 @@
     "examples/preact-rainbow": "parcel examples/preact-rainbow/index.html --open --out-dir .temp/preact-rainbow",
     "examples/performance": "parcel examples/performance/index.html --open --out-dir .temp/performance",
     "examples/keyed-list": "parcel examples/keyed-list/index.html --open --out-dir .temp/keyed-list",
+    "examples/lazy-render": "parcel examples/lazy-render/index.html --open --out-dir .temp/lazy-render",
     "examples/rainbow": "parcel examples/rainbow/index.html --open --out-dir .temp/rainbow",
     "examples/context": "parcel examples/context/index.html --open --out-dir .temp/context",
     "examples/suspense": "parcel examples/suspense/index.html --open --out-dir .temp/suspense",
@@ -16,11 +17,11 @@
     "examples/router-nested": "parcel examples/router-nested/index.html --open --out-dir .temp/router-nested",
     "test": "jest --runInBand --detectOpenHandles",
     "build-browser": "rollup $INPUT --config --file $OUTPUT --output.name rxapp --format iife && gzip-size $OUTPUT",
-    "build-browser-compact": "cross-env INPUT=./browser/compact.js OUTPUT=./dist/compact.js npm run build-browser",
+    "build-browser-core": "cross-env INPUT=./browser/core.js OUTPUT=./dist/core.js npm run build-browser",
     "build-browser-async": "cross-env INPUT=./browser/async.js OUTPUT=./dist/async.js npm run build-browser",
     "build-browser-router": "cross-env INPUT=./browser/router.js OUTPUT=./dist/router.js npm run build-browser",
     "build-browser-full": "cross-env INPUT=./browser/full.js OUTPUT=./dist/full.js npm run build-browser",
-    "build-browser-all": "npm run build-browser-compact && npm run build-browser-async && npm run build-browser-router && npm run build-browser-full",
+    "build-browser-all": "npm run build-browser-core && npm run build-browser-async && npm run build-browser-router && npm run build-browser-full",
     "_publish": "npm run test && npm run build-browser-all && npm publish"
   },
   "files": [
