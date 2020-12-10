@@ -1,5 +1,5 @@
 import { debounce, Suspense } from "../../async";
-import { part, memo } from "../../core";
+import { part, Chunk } from "../../core";
 
 const maxCoins = 10000;
 let term = "";
@@ -41,31 +41,19 @@ const Header = ({ width, column }) => {
   let headerTextBinding = () =>
     orderBy === column ? `${column} ${desc ? "⬇️" : "⬆️"}` : column;
   return part`
-  <th ${{ style: `width: ${width}px` }}>
+  <th style="height: 40px; vertical-align: middle" ${{ style: `width: ${width}px` }}>
     <a href="#" ${headerPropsBinding}>${headerTextBinding}</a>
   </th>`;
 };
 
-const RowGroup = part(
-  (props) => {
-    return part`<tbody>${() =>
-      props.items.map((coin) => Row({ coin, key: coin.Id }))}</tbody>`;
-  },
-  { lazy: true }
-);
-
-const getRows = memo((coins) => {
-  coins = coins.slice();
-  let groups = [];
-  while (coins.length) {
-    let items = coins.splice(0, 25);
-    groups.push(RowGroup({ key: items[0].Id, items }));
-  }
-  return groups;
-});
-
 const Table = part(() => {
   const totalCoinBinding = () => coins.length;
+  const renderItems = (items) => ({
+    key: items[0].Id,
+    content: part`<tbody>${items.map((coin) =>
+      Row({ coin, key: coin.Id })
+    )}</tbody>`,
+  });
 
   return part`
   <h1>Crypto Search</h1>
@@ -85,7 +73,8 @@ const Table = part(() => {
       ${Header({ column: "Image", orderBy, desc, width: 100 })}
       </tr>
     </thead>
-    ${() => getRows(filteredCoins || coins)}
+    ${() =>
+      Chunk({ data: filteredCoins || coins, size: 25, render: renderItems })}
   </table>`;
 });
 
