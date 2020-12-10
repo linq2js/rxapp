@@ -1,6 +1,6 @@
 {
   "name": "rxapp",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "The tiny framework for building reactive web app",
   "main": "./core/index.js",
   "scripts": {
