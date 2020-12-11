@@ -1,4 +1,4 @@
-import { part, chunk } from "../../core";
+import { part, Chunk } from "../../core";
 
 let selected = 0;
 let data = [];
@@ -36,17 +36,14 @@ const Row = part((props) => {
 });
 
 const Table = part(() => {
-  const rowChunk = chunk({
-    size: 50,
-    render: (items) =>
-      part`<tbody id="tbody">${items.map((item) =>
-        Row({ item, key: item.id })
-      )}</tbody>`,
-  });
+  const render = (items) =>
+    part`<tbody id="tbody">${items.map((item) =>
+      Row({ item, key: item.id })
+    )}</tbody>`;
 
   return part`
   <table class="table table-hover table-striped test-data">
-    ${() => rowChunk(data)}
+    ${() => Chunk({ data, size: 50, render })}
   </table>
   `;
 });

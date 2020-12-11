@@ -1,6 +1,5 @@
 import createComponent from "./createComponent";
 import createMemo from "./createMemo";
-import { emptyObject } from "./util";
 
 let Group = createComponent(
   (props) => () => props.render(props.items, props.index),
@@ -9,8 +8,8 @@ let Group = createComponent(
   }
 );
 
-export default function chunk({ size = 100, render } = emptyObject) {
-  return createMemo((data = []) => {
+let Chunk = createComponent((props) => {
+  let createChunks = createMemo((data = [], size = 100) => {
     let index = 0;
     let groups = [];
     // let getKey = typeof key === "function" ? key : (item) => item[key];
@@ -19,7 +18,7 @@ export default function chunk({ size = 100, render } = emptyObject) {
       groups.push(
         Group({
           key: groups.length,
-          render,
+          render: props.render,
           index: groups.length,
           items,
         })
@@ -28,4 +27,8 @@ export default function chunk({ size = 100, render } = emptyObject) {
     }
     return groups;
   });
-}
+
+  return () => createChunks(props.data, props.size);
+});
+
+export default Chunk;

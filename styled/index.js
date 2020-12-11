@@ -5,8 +5,8 @@ import { compile, serialize, stringify } from "stylis";
 
 let styleElement;
 let defaultTheme = {};
-export let themContext = createContext(defaultTheme);
-let [consumeTheme] = themContext;
+export let themeContext = createContext(defaultTheme);
+let [consumeTheme] = themeContext;
 let uuid = Date.now();
 let cache = new Map();
 
@@ -37,6 +37,7 @@ function applyDocumentStyle(strings) {
 }
 
 export function styled(defaultTag, binding) {
+  // styled` document style `
   if (isArray(defaultTag)) {
     return applyDocumentStyle.apply(null, arguments);
   }
@@ -52,6 +53,7 @@ export function styled(defaultTag, binding) {
       result.props.inner = null;
       let templateFactory =
         "key" in result.props ? createPart.key(result.props.key) : createPart;
+
       if (!hasBinding) {
         return templateFactory([`<${tag} `, `/>`], {
           class: result.class,

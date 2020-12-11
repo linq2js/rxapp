@@ -1,5 +1,5 @@
 import { debounce, Suspense } from "../../async";
-import { part, chunk } from "../../core";
+import { part, Chunk } from "../../core";
 
 const maxCoins = 10000;
 let term = "";
@@ -50,11 +50,8 @@ const Header = ({ width, column }) => {
 
 const Table = part(() => {
   const totalCoinBinding = () => coins.length;
-  const rowChunk = chunk({
-    size: 25,
-    render: (items) =>
-      part`<tbody>${items.map((coin) => Row({ coin, key: coin.Id }))}</tbody>`,
-  });
+  const render = (items) =>
+    part`<tbody>${items.map((coin) => Row({ coin, key: coin.Id }))}</tbody>`;
 
   return part`
   <h1>Crypto Search</h1>
@@ -74,7 +71,7 @@ const Table = part(() => {
       ${Header({ column: "Image", orderBy, desc, width: 100 })}
       </tr>
     </thead>
-    ${() => rowChunk(filteredCoins || coins)}
+    ${() => Chunk({ data: filteredCoins || coins, size: 25, render })}
   </table>`;
 });
 
