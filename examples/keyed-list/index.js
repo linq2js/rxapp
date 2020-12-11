@@ -42,9 +42,11 @@ const Table = part(() => {
     )}</tbody>`;
 
   return part`
-  <table class="table table-hover table-striped test-data">
-    ${() => Chunk({ data, size: 50, render })}
-  </table>
+  <div style="height: 500px; overflow: auto; border: 1px solid silver;">
+    <table class="table table-hover table-striped test-data">
+      ${() => Chunk({ data, size: 50, render })}
+    </table>
+  </div>
   `;
 });
 
@@ -55,6 +57,11 @@ const App = part`
       <div class="col-md-6"><h1>RXAPP</h1></div>
       <div class="col-md-6">
         <div class="row">
+          ${Button({
+            id: "run300",
+            title: "Create 300 rows",
+            action: () => run(300),
+          })}
           ${Button({
             id: "run1k",
             title: "Create 1,000 rows",
