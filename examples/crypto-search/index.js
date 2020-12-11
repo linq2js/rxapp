@@ -1,5 +1,5 @@
 import { debounce, Suspense } from "../../async";
-import { part, Chunk } from "../../core";
+import { part, chunk } from "../../core";
 
 const maxCoins = 10000;
 let term = "";
@@ -41,18 +41,20 @@ const Header = ({ width, column }) => {
   let headerTextBinding = () =>
     orderBy === column ? `${column} ${desc ? "⬇️" : "⬆️"}` : column;
   return part`
-  <th style="height: 40px; vertical-align: middle" ${{ style: `width: ${width}px` }}>
+  <th style="height: 40px; vertical-align: middle" ${{
+    style: `width: ${width}px`,
+  }}>
     <a href="#" ${headerPropsBinding}>${headerTextBinding}</a>
   </th>`;
 };
 
 const Table = part(() => {
   const totalCoinBinding = () => coins.length;
-  const renderItems = (items) => ({
-    key: items[0].Id,
-    content: part`<tbody>${items.map((coin) =>
-      Row({ coin, key: coin.Id })
-    )}</tbody>`,
+  const rowChunk = chunk({
+    size: 25,
+    key: "Id",
+    render: (items) =>
+      part`<tbody>${items.map((coin) => Row({ coin, key: coin.Id }))}</tbody>`,
   });
 
   return part`
@@ -73,8 +75,7 @@ const Table = part(() => {
       ${Header({ column: "Image", orderBy, desc, width: 100 })}
       </tr>
     </thead>
-    ${() =>
-      Chunk({ data: filteredCoins || coins, size: 25, render: renderItems })}
+    ${() => rowChunk(filteredCoins || coins)}
   </table>`;
 });
 

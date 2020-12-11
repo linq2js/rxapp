@@ -102,8 +102,8 @@ export interface ConsumeFn<T> extends Function {
  */
 export function context<T>(initial?: T): [Provider<T>, ConsumeFn<T>];
 
-export const Chunk: DynamicPart<{
+export function chunk(options: {
   size?: number;
-  data: any[];
-  render: (items: any[], index?: number) => { key?: any; content: any };
-}>;
+  key?: string | Function;
+  render: (items: any[], index?: number) => any;
+}): (data: any[]) => any;

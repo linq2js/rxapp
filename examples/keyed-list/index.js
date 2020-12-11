@@ -1,4 +1,4 @@
-import { part, memo } from "../../core";
+import { part, chunk } from "../../core";
 
 let selected = 0;
 let data = [];
@@ -35,27 +35,19 @@ const Row = part((props) => {
   `;
 });
 
-const RowGroup = part(
-  (props) => {
-    return part`<tbody id="tbody">${() =>
-      props.items.map((item) => Row({ item, key: item.id }))}</tbody>`;
-  },
-  { lazy: true }
-);
-
 const Table = part(() => {
-  let getGroups = (data) => {
-    data = data.slice();
-    let groups = [];
-    while (data.length) {
-      let items = data.splice(0, 200);
-      groups.push(RowGroup({ key: items[0].key, items }));
-    }
-    return groups;
-  };
+  const rowChunk = chunk({
+    size: 50,
+    key: "id",
+    render: (items) =>
+      part`<tbody id="tbody">${items.map((item) =>
+        Row({ item, key: item.id })
+      )}</tbody>`,
+  });
+
   return part`
   <table class="table table-hover table-striped test-data">
-    ${() => getGroups(data)}
+    ${() => rowChunk(data)}
   </table>
   `;
 });
@@ -97,6 +89,11 @@ const App = part`
             title: "Create 10,000 rows",
             action: () => run(10000),
           })}
+           ${Button({
+             id: "run100k",
+             title: "Create 100,000 rows",
+             action: () => run(100000),
+           })}
           ${Button({ id: "add", title: "Append 1,000 rows", action: add })}
           ${Button({
             id: "update",
@@ -259,17 +256,3 @@ function buildData(count) {
   }
   return data;
 }
-
-(function () {
-  var script = document.createElement("script");
-  script.onload = function () {
-    var stats = new Stats();
-    document.body.appendChild(stats.dom);
-    requestAnimationFrame(function loop() {
-      stats.update();
-      requestAnimationFrame(loop);
-    });
-  };
-  script.src = "//cdn.jsdelivr.net/gh/Kevnz/stats.js/build/stats.min.js";
-  document.head.appendChild(script);
-})();
