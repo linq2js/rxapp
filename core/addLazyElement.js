@@ -1,5 +1,4 @@
 import createEmitter from "./createEmitter";
-import { doc } from "./util";
 
 let onScrollListenerAdded = false;
 let scrollEmitter = createEmitter().get("scroll");

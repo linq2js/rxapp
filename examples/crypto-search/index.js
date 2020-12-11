@@ -52,7 +52,6 @@ const Table = part(() => {
   const totalCoinBinding = () => coins.length;
   const rowChunk = chunk({
     size: 25,
-    key: "Id",
     render: (items) =>
       part`<tbody>${items.map((coin) => Row({ coin, key: coin.Id }))}</tbody>`,
   });

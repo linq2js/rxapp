@@ -75,21 +75,27 @@ export default function createTemplateRenderer(
       let i = bindings.length;
       while (i--) {
         let binding = bindings[i];
-        binding.unsubscribe && binding.unsubscribe();
         if (typeof binding.value === "function") {
-          binding.reactiveHandler = context.createReactiveHandler((result) => {
-            if (binding.updateToken === context.updateToken) {
-              return;
-            }
-            binding.updateToken = context.updateToken;
-            updateBinding(binding, result);
-          });
-          let reactiveFn = binding.value;
-          let reactiveBinding = () => binding.reactiveHandler(reactiveFn);
-          binding.unsubscribe = context.addBinding(reactiveBinding);
-          reactiveBinding();
+          if (!binding.reactiveHandler) {
+            binding.reactiveHandler = context.createReactiveHandler(
+              (result) => {
+                if (binding.updateToken === context.updateToken) {
+                  return;
+                }
+                binding.updateToken = context.updateToken;
+                updateBinding(binding, result);
+              }
+            );
+            binding.reactiveBinding = () =>
+              binding.reactiveHandler(binding.value);
+            binding.unsubscribe = context.addBinding(binding.reactiveBinding);
+          }
+          binding.reactiveBinding();
         } else {
-          binding.unsubscribe = null;
+          if (binding.unsubscribe) {
+            binding.unsubscribe();
+            binding.unsubscribe = null;
+          }
           updateBinding(binding, binding.value);
         }
       }

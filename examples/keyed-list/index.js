@@ -38,7 +38,6 @@ const Row = part((props) => {
 const Table = part(() => {
   const rowChunk = chunk({
     size: 50,
-    key: "id",
     render: (items) =>
       part`<tbody id="tbody">${items.map((item) =>
         Row({ item, key: item.id })

@@ -10,9 +10,7 @@ export default function createReactiveRenderer(
 ) {
   let inner = createData(marker, "reactive");
   let unmounted = false;
-  if (reactiveFn[isMemo]) {
-    reactiveFn = createMemoWrapper(reactiveFn);
-  }
+  let reactiveFnWrapper;
 
   let reactiveHandler = context.createReactiveHandler((result) => {
     if (unmounted) return;
@@ -25,8 +23,18 @@ export default function createReactiveRenderer(
 
   function update() {
     if (unmounted) return;
-    reactiveHandler(reactiveFn);
+    reactiveHandler(reactiveFnWrapper);
   }
+
+  function changeReactiveFn(fn) {
+    if (reactiveFnWrapper && fn === reactiveFn) return;
+    reactiveFn = fn;
+    reactiveFnWrapper = reactiveFn[isMemo]
+      ? createMemoWrapper(reactiveFn)
+      : reactiveFn;
+  }
+
+  changeReactiveFn(reactiveFn);
 
   return {
     type: reactiveType,
@@ -37,7 +45,10 @@ export default function createReactiveRenderer(
       inner.unmount();
     },
     reorder: inner.reorder,
-    update,
+    update(nextReactiveFn) {
+      changeReactiveFn(nextReactiveFn);
+      update();
+    },
   };
 }
 
