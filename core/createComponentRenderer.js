@@ -1,9 +1,10 @@
-import arrayEqual from "./arrayEqual";
 import createData from "./createData";
+import createEffectManager from "./createEffectManager";
+import { createReactiveHandler } from "./createReactiveHandler";
 import globalContext from "./globalContext";
 import addLazyElement from "./addLazyElement";
 import { componentType } from "./types";
-import {assign, emptyObject, invokeAll} from "./util";
+import { assign, emptyObject } from "./util";
 
 export default function createComponentRenderer(
   mount,
@@ -13,47 +14,36 @@ export default function createComponentRenderer(
 ) {
   let { render, props, forceUpdate, lazy } = content;
   let inner = createData(marker, "component");
-  let currentProps = props;
+  let currentProps = { ...props };
   let currentRef;
-  let unmounted = false;
-  let effects = [];
-  let mounted = false;
   let removeUpdateListener;
   let removeScrollUpdateListener;
   let isVisibleInViewport = !lazy;
-  let componentContext = { ...context };
-  let component = (globalContext.component = {
+  let component = {
     handle: emptyObject,
     props: currentProps,
-    addEffect,
-  });
-  let reactiveHandler = context.createReactiveHandler((result) => {
-    !unmounted && mount(context, inner, result);
-    if (!mounted) {
-      mounted = true;
-      removeUpdateListener = context.addBinding(runEffects);
-      runEffects();
-    }
-  }, componentContext);
-
-  function runEffects() {
-    if (unmounted) return;
-    for (let i = 0; i < effects.length; i++) {
-      let data = effects[i];
-      let currentDeps = data.deps ? data.deps(component.props, context) : [];
-      if (!arrayEqual(currentDeps, data.prevDeps)) {
-        data.prevDeps = currentDeps;
-        data.dispose && data.dispose();
-        data.dispose = data.effect();
+    mounted: false,
+    unmounted: false,
+  };
+  let effects = createEffectManager(component, context);
+  let reactiveHandler = createReactiveHandler(
+    (result) => {
+      let prevComponent = globalContext.component;
+      try {
+        globalContext.component = component;
+        !component.unmounted && mount(context, inner, result);
+      } finally {
+        globalContext.component = prevComponent;
       }
-    }
-  }
-
-  function addEffect(effect, deps) {
-    if (mounted)
-      throw new Error("Cannot add effect after the component mounted");
-    effects.push({ effect, deps });
-  }
+      if (!component.mounted) {
+        component.mounted = true;
+        removeUpdateListener = context.addBinding(effects.run);
+        effects.run();
+      }
+    },
+    currentProps,
+    context
+  );
 
   if (lazy) {
     removeScrollUpdateListener = addLazyElement(marker, () =>
@@ -65,11 +55,11 @@ export default function createComponentRenderer(
     type: componentType,
     render,
     unmount() {
-      if (unmounted) return;
-      unmounted = true;
+      if (component.unmounted) return;
+      component.unmounted = true;
       removeUpdateListener && removeUpdateListener();
       removeScrollUpdateListener && removeScrollUpdateListener();
-      invokeAll(effects, undefined, "dispose");
+      effects.dispose();
       inner.unmount();
     },
     reorder: inner.reorder,
@@ -87,7 +77,7 @@ export default function createComponentRenderer(
       }
       assign(currentProps, props);
       isVisibleInViewport &&
-        (!mounted || forceUpdate) &&
+        (!component.mounted || forceUpdate) &&
         reactiveHandler(render);
     },
   };

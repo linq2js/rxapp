@@ -1,4 +1,5 @@
 import createMarker from "./createMarker";
+import { createReactiveHandler } from "./createReactiveHandler";
 import isEqual from "./isEqual";
 import patchNode from "./patchNode";
 import { directiveType, templateType, placeholderType } from "./types";
@@ -93,7 +94,7 @@ export default function createTemplateRenderer(
         let binding = bindings[i];
         if (typeof binding.value === "function") {
           if (!binding.reactiveHandler) {
-            binding.reactiveHandler = context.createReactiveHandler(
+            binding.reactiveHandler = createReactiveHandler(
               (result) => {
                 if (binding.updateToken === context.updateToken) {
                   return;
@@ -101,8 +102,8 @@ export default function createTemplateRenderer(
                 binding.updateToken = context.updateToken;
                 updateBinding(binding, result);
               },
-              undefined,
-              binding
+              binding,
+              context
             );
             binding.reactiveBinding = () =>
               binding.reactiveHandler(binding.value);

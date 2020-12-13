@@ -1,6 +1,6 @@
+import createEffectManager from "./createEffectManager";
 import createEmitter from "./createEmitter";
 import createMarker from "./createMarker";
-import globalContext from "./globalContext";
 import isIteratorLike from "./isIteratorLike";
 import isPromiseLike from "./isPromiseLike";
 import mountContent from "./mountContent";
@@ -10,30 +10,38 @@ export default function mount(content, options = emptyObject) {
   if (typeof options === "string") options = { container: options };
   let {
     container = doc.body,
-    onInit /*, hydrate*/,
-    onUpdate,
+    init /*, hydrate*/,
     store,
     actions = emptyObject,
     middleware,
   } = options;
+
   let updateEmitter = createEmitter().get("update");
   let data = {
     marker: createMarker("app"),
   };
+
   let context = {
     appId: Symbol("app"),
     shared: {},
     update,
     dispatch,
     addBinding: updateEmitter.on,
-    createReactiveHandler,
     updateToken: Symbol(),
     action: (fn) => (payload) => dispatch(fn, payload),
     actions: {},
+    dispose,
   };
+  let defaultComponent = {};
   if (typeof container === "string") container = doc.querySelector(container);
+  if (container.$$app) container.$$app.dispose();
+  container.$$app = context;
+  let effects = createEffectManager(defaultComponent, context);
+
   container.innerHTML = "";
   container.appendChild(data.marker);
+
+  function dispose() {}
 
   function update() {
     // return updateEmitter.emit();
@@ -41,25 +49,8 @@ export default function mount(content, options = emptyObject) {
     enqueue(() => {
       if (token !== context.updateToken) return;
       updateEmitter.emit();
-      onUpdate && dispatch(onUpdate, context);
+      effects.run();
     });
-  }
-
-  function createReactiveHandler(
-    processor,
-    customContext = context,
-    component = globalContext.component
-  ) {
-    let asyncHandler = context.asyncHandler;
-    return function (fn) {
-      try {
-        let result = fn(component.props, customContext);
-        return processor(result);
-      } catch (e) {
-        if (isPromiseLike(e) && asyncHandler) return asyncHandler(e);
-        throw e;
-      }
-    };
   }
 
   function dispatch(action, payload) {
@@ -72,6 +63,12 @@ export default function mount(content, options = emptyObject) {
     } finally {
       update();
     }
+  }
+
+  if (options.effects) {
+    options.effects.forEach((effect) =>
+      isArray(effect) ? effects.add(...effect) : effects.add(effect)
+    );
   }
 
   if (store) {
@@ -95,7 +92,8 @@ export default function mount(content, options = emptyObject) {
 
   mountContent(context, data, content);
 
-  typeof onInit === "function" && dispatch(onInit, context);
+  typeof init === "function" && dispatch(init, context);
+  effects.run();
 
   return context;
 }

@@ -5,7 +5,7 @@ import { assign } from "./util";
 export default function createPart() {
   if (typeof arguments[0] === "function")
     return createComponent.apply(null, arguments);
-  return createTemplate(null, arguments);
+  return createTemplate(void 0, arguments);
 }
 
 assign(createPart, {

@@ -3,9 +3,12 @@ import { mountMethod } from "./mount";
 import { componentType } from "./types";
 import { assign, emptyObject, isArray, slice } from "./util";
 
-export default function createComponent(render, { forceUpdate, lazy } = emptyObject) {
+export default function createComponent(
+  render,
+  { forceUpdate, lazy } = emptyObject
+) {
   let defWithoutProps = {
-    key: null,
+    key: void 0,
     ref: null,
     type: componentType,
     render,
@@ -19,7 +22,7 @@ export default function createComponent(render, { forceUpdate, lazy } = emptyObj
     if (isArray(arguments[0])) {
       return {
         ...defWithoutProps,
-        props: { children: createTemplate(null, arguments) },
+        props: { children: createTemplate(void 0, arguments) },
       };
     }
     let { key, ref, ...props } = arguments[0] || emptyObject;
@@ -39,7 +42,7 @@ export default function createComponent(render, { forceUpdate, lazy } = emptyObj
           ...defWithProps,
           props: {
             ...defWithProps.props,
-            children: createTemplate(null, arguments),
+            children: createTemplate(void 0, arguments),
           },
         };
       }

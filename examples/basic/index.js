@@ -15,4 +15,10 @@ part`<form ${{ onsubmit: add, action: "javascript:void 0" }}>
         })} />
       </label>
       <ul>${() => todos.map((todo) => part`<li>${todo.text}</li>`)}</ul>
-    </form>`.mount();
+    </form>`.mount({
+  effects: [
+    () => {
+      console.log(11);
+    },
+  ],
+});

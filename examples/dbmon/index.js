@@ -1,11 +1,16 @@
-import { part } from "../../core";
+import { Chunk, part } from "../../core";
 
 let rows = [];
 
 part`
   <div>
     <table class="table table-striped latest-data">
-      <tbody>
+      ${() =>
+        Chunk({
+          data: rows,
+          size: 10,
+          render: (rows) => part`
+        <tbody>
         ${() =>
           rows.map(
             (row) => part.key(row.dbname)`
@@ -37,12 +42,13 @@ part`
             )}
           </tr>`
           )}
-      </tbody>
+      </tbody>`,
+        })}
     </table>
   </div>
 `.mount({
   container: "#app",
-  onInit({ actions }) {
+  init({ actions }) {
     function next() {
       actions.generate();
       setTimeout(next, ENV.timeout);

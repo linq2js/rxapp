@@ -1,4 +1,4 @@
-import { memo, part } from "../../core";
+import { part } from "../../core";
 
 const startTime = Date.now();
 const duration = 30000;
@@ -26,13 +26,11 @@ const Matrix = part`<div id="matrix" style="width: 500px">${new Array(
   .fill()
   .map((_, n) => createCell(n))}</div>`;
 
-const Info = part(() => {
-  return part`
-      <h1 style="font-weight: 100">${secondsRunningBinding}</h1>
-      <div>${numColorUpdatesBinding} colors</div>
-      <div>${colorsPerSecondBinding} colors per second</div>
-  `;
-});
+const Info = part`
+  <h1 style="font-weight: 100">${secondsRunningBinding}</h1>
+  <div>${numColorUpdatesBinding} colors</div>
+  <div>${colorsPerSecondBinding} colors per second</div>
+`;
 
 const App = part`
 <div>

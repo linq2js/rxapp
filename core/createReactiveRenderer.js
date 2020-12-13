@@ -1,6 +1,7 @@
 import createData from "./createData";
+import {createReactiveHandler} from "./createReactiveHandler";
 import { isMemo, noChangeType, reactiveType } from "./types";
-import { unset } from "./util";
+import { emptyObject, unset } from "./util";
 
 export default function createReactiveRenderer(
   mount,
@@ -12,11 +13,15 @@ export default function createReactiveRenderer(
   let unmounted = false;
   let reactiveFnWrapper;
 
-  let reactiveHandler = context.createReactiveHandler((result) => {
-    if (unmounted) return;
-    // skip rendering if the result is noChange
-    result !== noChangeType && mount(context, inner, result);
-  });
+  let reactiveHandler = createReactiveHandler(
+    (result) => {
+      if (unmounted) return;
+      // skip rendering if the result is noChange
+      result !== noChangeType && mount(context, inner, result);
+    },
+    emptyObject,
+    context
+  );
   let unsubscribe = context.addBinding(update);
 
   // update();
