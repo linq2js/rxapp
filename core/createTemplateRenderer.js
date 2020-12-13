@@ -1,7 +1,8 @@
 import createMarker from "./createMarker";
+import isEqual from "./isEqual";
 import patchNode from "./patchNode";
 import { directiveType, templateType, placeholderType } from "./types";
-import { doc, emptyArray, indexOf } from "./util";
+import { doc, emptyArray, indexOf, unset } from "./util";
 
 let templateTagName = "template";
 let slotAttributeName = "hta-slot";
@@ -35,15 +36,20 @@ export default function createTemplateRenderer(
       rootNode
     );
     for (let j = 0; j < attachedNode.bindings.length; j++) {
-      let binding = attachedNode.bindings[j];
-      bindings.unshift({
+      let b = attachedNode.bindings[j];
+      let binding = {
+        prevValue: unset,
         marker: node,
-        type: binding.type,
-        index: binding.index,
-        props: new Map(),
-        style: new Map(),
-        class: new Map(),
-      });
+        type: b.type,
+        index: b.index,
+        props: {},
+      };
+      if (b.type === directiveType) {
+        binding.props = new Map();
+        binding.style = new Map();
+        binding.class = new Map();
+      }
+      bindings.unshift(binding);
     }
   }
 
@@ -57,6 +63,16 @@ export default function createTemplateRenderer(
 
   function updateBinding(binding, value) {
     if (unmounted) return;
+    let nextKey = value && value.key;
+    if (typeof nextKey !== "undefined") {
+      // do nothing if binding has the same previous key
+      if (isEqual(binding.key, nextKey)) return;
+      binding.key = nextKey;
+      if (value.bind) {
+        value = value.bind(nextKey);
+      }
+    }
+
     if (binding.type === directiveType) {
       patchNode(context, binding, binding.marker, value);
     } else {
@@ -84,7 +100,9 @@ export default function createTemplateRenderer(
                 }
                 binding.updateToken = context.updateToken;
                 updateBinding(binding, result);
-              }
+              },
+              undefined,
+              binding
             );
             binding.reactiveBinding = () =>
               binding.reactiveHandler(binding.value);

@@ -1,10 +1,9 @@
 import arrayEqual from "./arrayEqual";
 import createData from "./createData";
-import createReadonlyProxy from "./createReadonlyProxy";
 import globalContext from "./globalContext";
 import addLazyElement from "./addLazyElement";
 import { componentType } from "./types";
-import { invokeAll } from "./util";
+import {assign, emptyObject, invokeAll} from "./util";
 
 export default function createComponentRenderer(
   mount,
@@ -15,8 +14,8 @@ export default function createComponentRenderer(
   let { render, props, forceUpdate, lazy } = content;
   let inner = createData(marker, "component");
   let currentProps = props;
+  let currentRef;
   let unmounted = false;
-  let propsProxy;
   let effects = [];
   let mounted = false;
   let removeUpdateListener;
@@ -24,10 +23,8 @@ export default function createComponentRenderer(
   let isVisibleInViewport = !lazy;
   let componentContext = { ...context };
   let component = (globalContext.component = {
-    get props() {
-      if (!propsProxy) propsProxy = createReadonlyProxy(() => currentProps);
-      return propsProxy;
-    },
+    handle: emptyObject,
+    props: currentProps,
     addEffect,
   });
   let reactiveHandler = context.createReactiveHandler((result) => {
@@ -42,13 +39,12 @@ export default function createComponentRenderer(
   function runEffects() {
     if (unmounted) return;
     for (let i = 0; i < effects.length; i++) {
-      let effectData = effects[i];
-      let [effect, deps] = effectData;
-      let currentDeps = deps ? deps(component.props, context) : [Symbol()];
-      if (!arrayEqual(currentDeps, effectData.prevDeps)) {
-        effectData.prevDeps = currentDeps;
-        effectData.dispose && effectData.dispose();
-        effectData.dispose = effect();
+      let data = effects[i];
+      let currentDeps = data.deps ? data.deps(component.props, context) : [];
+      if (!arrayEqual(currentDeps, data.prevDeps)) {
+        data.prevDeps = currentDeps;
+        data.dispose && data.dispose();
+        data.dispose = data.effect();
       }
     }
   }
@@ -56,7 +52,7 @@ export default function createComponentRenderer(
   function addEffect(effect, deps) {
     if (mounted)
       throw new Error("Cannot add effect after the component mounted");
-    effects.push([effect, deps]);
+    effects.push({ effect, deps });
   }
 
   if (lazy) {
@@ -78,7 +74,18 @@ export default function createComponentRenderer(
     },
     reorder: inner.reorder,
     update({ ref, props }) {
-      currentProps = props;
+      if (ref !== currentRef) {
+        currentRef = ref;
+        typeof currentRef === "function"
+          ? currentRef(component.handle)
+          : (currentRef.current = component.handle);
+      }
+
+      for (let p in currentProps) {
+        if (p in props) continue;
+        delete currentProps[p];
+      }
+      assign(currentProps, props);
       isVisibleInViewport &&
         (!mounted || forceUpdate) &&
         reactiveHandler(render);

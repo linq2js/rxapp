@@ -1,4 +1,4 @@
-import { part } from "../../core";
+import { memo, part } from "../../core";
 
 const startTime = Date.now();
 const duration = 30000;
@@ -10,16 +10,21 @@ let secondsRunningBinding = () => secondsRunning;
 let numColorUpdatesBinding = () => numColorUpdates;
 let colorsPerSecondBinding = () => Math.floor(numColorUpdates / secondsRunning);
 
-const Cell = part(({ n }) => {
-  const cellStyle = () => ({ style: { backgroundColor: colors[n] } });
-  return part`<div style="width: 30px; height: 30px; text-align: center; padding: 10px; float: left;" ${cellStyle}>${n}</div>`;
-});
+const createCell = (n) => {
+  const cellStyle = () => ({
+    key: colors[n],
+    style: { backgroundColor: colors[n] },
+  });
+  return part.key(
+    n
+  )`<div style="width: 30px; height: 30px; text-align: center; padding: 10px; float: left;" ${cellStyle}>${n}</div>`;
+};
 
 const Matrix = part`<div id="matrix" style="width: 500px">${new Array(
   numElements
 )
   .fill()
-  .map((_, n) => Cell({ n, key: n }))}</div>`;
+  .map((_, n) => createCell(n))}</div>`;
 
 const Info = part(() => {
   return part`

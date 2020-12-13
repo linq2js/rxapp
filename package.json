@@ -1,6 +1,6 @@
 {
   "name": "rxapp",
-  "version": "0.0.13",
+  "version": "0.0.14",
   "description": "The tiny framework for building reactive web app",
   "main": "./core/index.js",
   "scripts": {
@@ -17,6 +17,7 @@
     "examples/router-nested": "parcel examples/router-nested/index.html --open --out-dir .temp/router-nested",
     "examples/crypto-search": "parcel examples/crypto-search/index.html --open --out-dir .temp/crypto-search",
     "examples/styled": "parcel examples/styled/index.html --open --out-dir .temp/styled",
+    "examples/dbmon": "parcel examples/dbmon/index.html --open --out-dir .temp/dbmon",
     "test": "jest --runInBand --detectOpenHandles",
     "build-browser": "rollup $INPUT --config --file $OUTPUT --output.name rxapp --format iife && gzip-size $OUTPUT",
     "build-browser-core": "cross-env INPUT=./browser/core.js OUTPUT=./dist/core.js npm run build-browser",

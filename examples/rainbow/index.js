@@ -24,8 +24,16 @@ let async = false;
 let points = makePoints();
 
 const Controls = (() => {
-  let numPointsBinding = () => ({ value: numPoints, onchange: handleUIUpdate });
-  let asyncBinding = () => ({ checked: async, onchange: handleUIUpdate });
+  let numPointsBinding = () => ({
+    key: numPoints,
+    value: numPoints,
+    onchange: handleUIUpdate,
+  });
+  let asyncBinding = () => ({
+    key: async,
+    checked: async,
+    onchange: handleUIUpdate,
+  });
 
   return part`
   <div class="controls">
@@ -40,7 +48,7 @@ const Controls = (() => {
   `;
 })();
 
-const createReact = (key, point) => {
+const createRect = (key, point) => {
   const fill$ = { "@fill": point.color };
   const transform$ = () => ({
     "@transform": `translate(${point.x}, ${point.y})`,
@@ -50,7 +58,7 @@ const createReact = (key, point) => {
 
 const Canvas = part(() => {
   const getPoints = memo((points) =>
-    points.map((point, index) => createReact(index, point))
+    points.map((point, index) => createRect(index, point))
   );
 
   return part`

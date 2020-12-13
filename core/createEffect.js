@@ -1,5 +1,5 @@
-import globalContext from "./globalContext";
+import gc from "./globalContext";
 
-export default function createEffect(effect) {
-  globalContext.component.addEffect(effect);
+export default function createEffect(effect, deps) {
+  gc.component.addEffect(effect, deps);
 }

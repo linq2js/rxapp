@@ -4,6 +4,7 @@ import { listType } from "./types";
 export default function createListRenderer(mount, context, marker) {
   let prevChildren = [];
   let prevList;
+  let prevLength;
 
   return {
     type: listType,
@@ -14,8 +15,9 @@ export default function createListRenderer(mount, context, marker) {
       }
     },
     update(list) {
-      if (list === prevList) return;
+      if (list === prevList && prevLength === list.length) return;
       prevList = list;
+      prevLength = list.length;
 
       let nextChildren = [];
       let nextKeyToIndex = new Map();

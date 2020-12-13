@@ -24,3 +24,11 @@ export function isComponent(value) {
 export function isTemplate(value) {
   return value && value.type === templateType;
 }
+
+//
+// export let enqueue =
+//   typeof requestAnimationFrame === "undefined"
+//     ? Promise.resolve().then.bind(Promise.resolve())
+//     : requestAnimationFrame;
+
+export let enqueue = Promise.resolve().then.bind(Promise.resolve());

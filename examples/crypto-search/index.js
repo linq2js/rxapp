@@ -79,7 +79,7 @@ part`
 ${Suspense({ fallback: "Loading...", children: Table })}
 `.mount({
   container: "#app",
-  init() {
+  onInit() {
     return fetch("https://min-api.cryptocompare.com/data/all/coinlist", {
       mode: "cors",
     })

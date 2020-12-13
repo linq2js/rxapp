@@ -58,10 +58,10 @@ function elementInViewport(element) {
     left += element.offsetLeft;
   }
   return contains(
-    window.pageXOffset,
-    window.pageYOffset,
-    window.innerWidth,
-    window.innerHeight,
+    pageXOffset,
+    pageYOffset,
+    innerWidth,
+    innerHeight,
     left,
     top,
     width,

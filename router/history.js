@@ -1,13 +1,12 @@
 import createEmitter from "../core/createEmitter";
-import createReadonlyProxy from "../core/createReadonlyProxy";
-import { emptyObject } from "../core/util";
+import { assign, emptyObject } from "../core/util";
 
-let loc;
 let navigateEmitter = createEmitter().get("navigate");
+let currentLocation = {};
 let historyWrapper = {
-  location: createReadonlyProxy(getLocation),
+  location: currentLocation,
   get state() {
-    return getLocation().state;
+    return currentLocation.state;
   },
   push(to, state) {
     redirect({ to, state });
@@ -20,7 +19,13 @@ let historyWrapper = {
 };
 
 function handleUpdate() {
-  loc = null;
+  assign(currentLocation, {
+    pathname: location.pathname || "/",
+    search: location.search,
+    state: history.state || emptyObject,
+    action: history.action,
+    hash: location.hash,
+  });
   navigateEmitter.emit();
 }
 
@@ -38,19 +43,6 @@ if (typeof history !== "undefined") {
 }
 
 handleUpdate();
-
-function getLocation() {
-  if (!loc) {
-    loc = {
-      pathname: location.pathname || "/",
-      search: location.search,
-      state: history.state || emptyObject,
-      action: history.action,
-      hash: location.hash,
-    };
-  }
-  return loc;
-}
 
 function redirect(options) {
   if (typeof options === "string") {
