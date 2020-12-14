@@ -106,28 +106,31 @@ part`
 ${Suspense({ fallback: "Loading...", children: Table })}
 `.mount({
   container: "#app",
-  init() {
-    coins.load(
-      fetch("https://min-api.cryptocompare.com/data/all/coinlist", {
-        mode: "cors",
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          return Object.entries(data.Data)
-            .slice(0, maxCoins)
-            .map(([Symbol, coin]) => ({
-              ...coin,
-              FullName: coin.FullName.trim(),
-              Symbol,
-            }));
-        })
-    );
+  init({ update }) {
+    fetch("https://min-api.cryptocompare.com/data/all/coinlist", {
+      mode: "cors",
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        let result = Object.entries(data.Data)
+          .slice(0, maxCoins)
+          .map(([Symbol, coin]) => ({
+            ...coin,
+            FullName: coin.FullName.trim(),
+            Symbol,
+          }));
+        coins.load(result);
+        update();
+
+        return result;
+      });
   },
 });
 
 // define actions
 function Search(e) {
   term = e.target.value;
+  filteredCoins.value;
 }
 
 function Sort(e, column) {
@@ -140,4 +143,5 @@ function Sort(e, column) {
     desc = false;
     orderBy = column;
   }
+  filteredCoins.value;
 }
