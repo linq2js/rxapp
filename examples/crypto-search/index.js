@@ -1,12 +1,39 @@
-import { debounce, Suspense } from "../../async";
+import { debounce, loadable, Suspense } from "../../async";
 import { part, Chunk } from "../../core";
 
 const maxCoins = 10000;
 let term = "";
 let orderBy = null;
 let desc = null;
-let coins = [];
-let filteredCoins;
+let coins = loadable([]);
+let filteredCoins = coins.map(
+  (coins) => {
+    let result;
+
+    if (term) {
+      const lowerTerm = term.toLowerCase();
+      result = coins.filter(
+        (coin) =>
+          coin.Id.toLowerCase().includes(lowerTerm) ||
+          coin.Symbol.toLowerCase().includes(lowerTerm) ||
+          coin.FullName.toLowerCase().includes(lowerTerm)
+      );
+    } else {
+      result = coins.slice();
+    }
+    const step = desc ? -1 : 1;
+    result.sort((a, b) => {
+      const av = a[orderBy] || 0;
+      const bv = b[orderBy] || 0;
+      if (av > bv) return step;
+      if (av < bv) return -1 * step;
+      return 0;
+    });
+
+    return result;
+  },
+  () => [term, orderBy, desc]
+);
 
 const Text = (props) => () => {
   let { text } = props;
@@ -49,7 +76,7 @@ const Header = ({ width, column }) => {
 };
 
 const Table = part(() => {
-  const totalCoinBinding = () => coins.length;
+  const totalCoinBinding = () => coins.value.length;
   const render = (items) =>
     part`<tbody>${items.map((coin) => Row({ coin, key: coin.Id }))}</tbody>`;
 
@@ -71,7 +98,7 @@ const Table = part(() => {
       ${Header({ column: "Image", orderBy, desc, width: 100 })}
       </tr>
     </thead>
-    ${() => Chunk({ data: filteredCoins || coins, size: 25, render })}
+    ${() => Chunk({ data: filteredCoins.value, size: 25, render })}
   </table>`;
 });
 
@@ -80,49 +107,27 @@ ${Suspense({ fallback: "Loading...", children: Table })}
 `.mount({
   container: "#app",
   init() {
-    return fetch("https://min-api.cryptocompare.com/data/all/coinlist", {
-      mode: "cors",
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        coins = Object.entries(data.Data)
-          .slice(0, maxCoins)
-          .map(([Symbol, coin]) => ({
-            ...coin,
-            FullName: coin.FullName.trim(),
-            Symbol,
-          }));
-      });
+    coins.load(
+      fetch("https://min-api.cryptocompare.com/data/all/coinlist", {
+        mode: "cors",
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          return Object.entries(data.Data)
+            .slice(0, maxCoins)
+            .map(([Symbol, coin]) => ({
+              ...coin,
+              FullName: coin.FullName.trim(),
+              Symbol,
+            }));
+        })
+    );
   },
 });
 
 // define actions
 function Search(e) {
   term = e.target.value;
-  filterCoins();
-}
-
-function filterCoins() {
-  const lowerTerm = term.toLowerCase();
-  if (term) {
-    const lowerTerm = term.toLowerCase();
-    filteredCoins = coins.filter(
-      (coin) =>
-        coin.Id.toLowerCase().includes(lowerTerm) ||
-        coin.Symbol.toLowerCase().includes(lowerTerm) ||
-        coin.FullName.toLowerCase().includes(lowerTerm)
-    );
-  } else {
-    filteredCoins = coins.slice();
-  }
-  const step = desc ? -1 : 1;
-  filteredCoins.sort((a, b) => {
-    const av = a[orderBy] || 0;
-    const bv = b[orderBy] || 0;
-    if (av > bv) return step;
-    if (av < bv) return -1 * step;
-    return 0;
-  });
 }
 
 function Sort(e, column) {
@@ -135,5 +140,4 @@ function Sort(e, column) {
     desc = false;
     orderBy = column;
   }
-  filterCoins();
 }

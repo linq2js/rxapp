@@ -4,6 +4,7 @@ export interface ApplicationContext {
   ): TResult;
   action<T>(action: T): T;
   update(): void;
+  actions: { [key: string]: (payload?: any) => any };
 }
 
 export interface Application extends ApplicationContext {}
@@ -18,7 +19,11 @@ export interface RenderFn<TProps extends {}> extends Function {
 export interface MountOptions {
   container?: string | Node;
   init?: Function;
+  effects?: (Effect | [Effect, any])[];
+  actions?: { [key: string]: (payload?: any) => any };
 }
+
+export type Effect = (context?: ApplicationContext) => any;
 
 export type TemplateSlot = Function | {} | DynamicPart<any> | any;
 

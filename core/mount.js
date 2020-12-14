@@ -4,6 +4,7 @@ import createMarker from "./createMarker";
 import isIteratorLike from "./isIteratorLike";
 import isPromiseLike from "./isPromiseLike";
 import mountContent from "./mountContent";
+import { loadableType, loadingType } from "./types";
 import { doc, emptyObject, enqueue, isArray } from "./util";
 
 export default function mount(content, options = emptyObject) {
@@ -41,7 +42,9 @@ export default function mount(content, options = emptyObject) {
   container.innerHTML = "";
   container.appendChild(data.marker);
 
-  function dispose() {}
+  function dispose() {
+    effects.dispose();
+  }
 
   function update() {
     // return updateEmitter.emit();
@@ -106,7 +109,11 @@ function handleIterator(context, iterator) {
   function next(payload) {
     let { done, value } = iterator.next(payload);
     if (done) return value;
+    if (value && value.type === loadableType && value.status !== loadingType)
+      return next(value.value);
     if (isPromiseLike(value)) return value.then(next);
+    if (typeof value === "function") return context.dispatch(value, context);
+
     if (isArray(value) && typeof value[0] === "function") {
       return context.dispatch(...value);
     }

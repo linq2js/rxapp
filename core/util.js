@@ -8,6 +8,7 @@ export let isArray = Array.isArray;
 export let assign = Object.assign;
 export let slice = emptyArray.slice;
 export let indexOf = emptyArray.indexOf;
+export let defProp = Object.defineProperty;
 export let doc = typeof document === "undefined" ? null : document;
 export function invokeAll(funcs, payload, prop) {
   for (let i = 0; i < funcs.length; i++) {
@@ -23,6 +24,13 @@ export function isComponent(value) {
 
 export function isTemplate(value) {
   return value && value.type === templateType;
+}
+
+export function getters(obj, getters) {
+  for (let key in getters) {
+    defProp(obj, key, { get: getters[key] });
+  }
+  return obj;
 }
 
 //

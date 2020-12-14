@@ -14,7 +14,11 @@ export default function createEffectManager(component, context) {
     if (component.unmounted) return;
     for (let i = 0; i < effects.length; i++) {
       let data = effects[i];
-      let currentDeps = data.deps ? data.deps(context) : emptyArray;
+      let currentDeps = data.deps
+        ? data.deps(context)
+        : data.deps === null || data.deps === void 0
+        ? emptyArray
+        : data.deps;
       if (!currentDeps || !arrayEqual(currentDeps, data.prevDeps)) {
         data.prevDeps = currentDeps;
         data.dispose && data.dispose();

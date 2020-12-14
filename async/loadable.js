@@ -1,6 +1,12 @@
+import createMemo from "../core/createMemo";
 import isPromiseLike from "../core/isPromiseLike";
-import { failedType, loadedType, loadingType } from "../core/types";
-import { assign } from "../core/util";
+import {
+  failedType,
+  loadableType,
+  loadedType,
+  loadingType,
+} from "../core/types";
+import { assign, emptyArray, getters } from "../core/util";
 
 /**
  * create a loadable data logic with initial value
@@ -53,34 +59,55 @@ export default function loadable(initial) {
     return value;
   }
 
+  function map(mapper, deps) {
+    return mapLoadable(getValue, mapper, deps);
+  }
+
+  assign(
+    getters(getValue, {
+      error: () => error,
+      value: getValue,
+      status: () => status,
+    }),
+    {
+      type: loadableType,
+      load,
+      map,
+      then(onResolve, onReject) {
+        return promise.then(onResolve, onReject);
+      },
+      finally(onFinally) {
+        return promise.finally(onFinally);
+      },
+      catch(onCatch) {
+        return promise.catch(onCatch);
+      },
+    }
+  );
+
   load(initial);
 
-  Object.defineProperties(getValue, {
-    load: { value: load },
-    value: {
-      get: getValue,
-    },
-    error: {
-      get() {
-        return error;
-      },
-    },
-    status: {
-      get() {
-        return status;
-      },
-    },
-  });
+  return getValue;
+}
 
-  return assign(getValue, {
-    then(onResolve, onReject) {
-      return promise.then(onResolve, onReject);
+function mapLoadable(loadable, mapper, deps) {
+  let memoizedValue = createMemo(mapper);
+  return getters(
+    {
+      then: loadable.then,
+      finally: loadable.finally,
+      catch: loadable.catch,
     },
-    finally(onFinally) {
-      return promise.finally(onFinally);
-    },
-    catch(onCatch) {
-      return promise.catch(onCatch);
-    },
-  });
+    {
+      value() {
+        let result = memoizedValue(
+          loadable.value,
+          ...(deps ? deps() || emptyArray : emptyArray)
+        );
+        return result;
+      },
+      error: () => loadable.error,
+      status: () => loadable.status,
+    }
+  );
 }

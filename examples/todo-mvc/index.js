@@ -1,21 +1,44 @@
 import { part } from "../../core";
 
-let todos = [],
-  filter = "all",
-  editingId = null;
+let todos = [];
+let filter = "all";
+let editingId = null;
 
-// components
+const Todo = part(({ todo }) => {
+  let inputRef = {};
+  let $edit = {
+    ref: inputRef,
+    onkeypress(e) {
+      if (e.key !== "Enter") return;
+      todo.title = inputRef.current.value;
+      editingId = null;
+    },
+  };
+  let $title = { ondblclick: () => (editingId = todo.id) };
+
+  return part`
+  <li class="todo" ${() => ({
+    ".completed": todo.completed,
+    ".editing": todo.id === editingId,
+  })}>
+    <div class="view">
+      <input type="checkbox" class="toggle" ${{ onchange: () => Toggle(todo) }}
+        ${() => ({ checked: todo.completed })}/>
+      <label ${$title}>${() => todo.title}</label>
+      <button class="destroy" ${{ onclick: () => Remove(todo.id) }}></button>
+    </div>
+    <input type="text" class="edit" ${$edit} ${() => ({ value: todo.title })}/>
+  </li>
+`;
+});
+
+const FilterLink = ({ text, type }) => part`
+  <li ${{ onclick: () => (filter = type) }}>
+    <a href="#" ${() => ({ ".selected": filter === type })}>${text}</a>
+  </li>`;
+
 part(() => {
   let inputRef = {};
-  let inputBinding = { ref: inputRef };
-  let clearCompleteBinding = { onclick: ClearCompleted };
-  let allFilter = FilterLink({ text: "All", type: "all", filter });
-  let activeFilter = FilterLink({ text: "Active", type: "active", filter });
-  let completedFilter = FilterLink({
-    text: "Completed",
-    type: "completed",
-    filter,
-  });
 
   function handleSubmit(e) {
     e.preventDefault();
@@ -37,22 +60,24 @@ part(() => {
       <header class="header">
         <h1 class="heading">todos</h1>
         <form ${{ onsubmit: handleSubmit }}>
-          <input type="text" class="new-todo" placeholder="What needs to be done ?" ${inputBinding}/>
+          <input type="text" class="new-todo" placeholder="What needs to be done ?"
+            ${{ ref: inputRef }}/>
         </form>
       </header>
       <section class="main">
         <input id="toggle-all" class="toggle-all" ${{ onclick: ToggleAll }}/>
         <label for="toggle-all"></label>
-        <ul class="todo-list">${visibleTodos.map((todo) =>
-          Todo({ todo, key: todo.id, editing: editingId === todo.id })
-        )}</ul>
+        <ul class="todo-list">
+          ${visibleTodos.map((todo) => Todo({ todo, key: todo.id }))}</ul>
       </section>
       <footer class="footer">
-        <span class="todo-count">
-          <strong>${activeCount}</strong> items left
-        </span>
-        <ul class="filters">${allFilter} ${activeFilter} ${completedFilter}</ul>
-        <button class="clear-completed" ${clearCompleteBinding}>Clear Completed</button>
+        <span class="todo-count"><strong>${activeCount}</strong> items left</span>
+        <ul class="filters">
+          ${FilterLink({ text: "All", type: "all" })}
+          ${FilterLink({ text: "Active", type: "active" })}
+          ${FilterLink({ text: "Completed", type: "completed" })}</ul>
+        <button class="clear-completed"
+          ${{ onclick: ClearCompleted }}>Clear Completed</button>
       </footer>
     </section>
     <footer class="info">
@@ -60,71 +85,38 @@ part(() => {
         <p>Written by <a href="https://github.com/linq2js" target="_blank">Linq2Js</a></p>
         <p>Part of <a href="http://todomvc.com" target="_blank">TodoMVC</a></p>
     </footer>
-  </div>
-  `;
+  </div>`;
   };
-}).mount("#app");
-
-const Todo = part((props) => {
-  let inputRef = {};
-  let todo = props.todo;
-  let liBinding = () => ({
-    class: { completed: todo.completed, editing: props.editing },
-  });
-  function handleEdit(e) {
-    if (e.key !== "Enter") return;
-    todo.title = inputRef.current.value;
-    editingId = null;
-  }
-  function handleToggle() {
-    todo.completed = !todo.completed;
-  }
-
-  return part`
-  <li class="todo" ${liBinding}>
-    <div class="view">
-      <input type="checkbox" class="toggle" ${{
-        onchange: handleToggle,
-      }} ${() => ({ checked: todo.completed })}/>
-      <label ${{ ondblclick: () => (editingId = todo.id) }}>
-        ${() => todo.title}</label>
-      <button class="destroy" ${{ onclick: () => Remove(todo.id) }}></button>
-    </div>
-    <input type="text" class="edit" ${{
-      ref: inputRef,
-      onkeypress: handleEdit,
-    }} ${() => ({ value: todo.title })}/>
-  </li>
-`;
+}).mount({
+  container: "#app",
+  init: Load,
+  effects: [[Save, false]],
 });
-
-const FilterLink = ({ text, type, filter }) => part`
-  <li ${{ onclick: () => (filter = type) }}>
-    <a href="#" ${{ class: { selected: filter === type } }}>${text}</a>
-  </li>`;
-
-// actions
-const Load = (state) =>
-  JSON.parse(window.localStorage.getItem("appState")) || state;
-
-const Save = (state) => {
-  window.localStorage.setItem("appState", JSON.stringify(state));
-};
-
-const ToggleAll = () =>
+function Load() {
+  todos = JSON.parse(window.localStorage.getItem("appState")) || todos;
+}
+function Save() {
+  window.localStorage.setItem("appState", JSON.stringify(todos));
+}
+function Remove(id) {
+  todos = todos.filter((todo) => todo.id !== id);
+}
+function Toggle(todo) {
+  todo.completed = !todo.completed;
+}
+function ClearCompleted() {
+  todos = filterTodos("active", todos);
+}
+function ToggleAll() {
   todos.forEach((todo) => {
     todo.completed =
       filter === "all" || (filter === "active" && !todo.completed);
   });
-
-const Remove = (id) => (todos = todos.filter((todo) => todo.id !== id));
-
-const ClearCompleted = () => (todos = filterTodos("active", todos));
-
-// utils
-const filterTodos = (filter, todos) =>
-  filter === "active"
+}
+function filterTodos(filter, todos) {
+  return filter === "active"
     ? todos.filter((todo) => !todo.completed)
     : filter === "completed"
     ? todos.filter((todo) => todo.completed)
     : todos;
+}

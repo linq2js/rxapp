@@ -29,17 +29,19 @@ function elementInViewport(element) {
   let width = element.offsetWidth;
   let height = element.offsetHeight;
   while (element.offsetParent) {
-    let {
-      scrollTop,
-      scrollLeft,
-      clientWidth,
-      clientHeight,
-      scrollHeight,
-      scrollWidth,
-    } = element.parentNode;
-    let isOverflown = scrollHeight > clientHeight || scrollWidth > clientWidth;
-    if (isOverflown) {
+    if (element.tagName !== "TABLE" && element.parentNode.tagName !== "TABLE") {
+      let {
+        scrollTop,
+        scrollLeft,
+        clientWidth,
+        clientHeight,
+        scrollHeight,
+        scrollWidth,
+      } = element.parentNode;
+      let isOverflown =
+        scrollHeight > clientHeight || scrollWidth > clientWidth;
       if (
+        isOverflown &&
         contains(
           scrollLeft,
           scrollTop,
@@ -50,9 +52,11 @@ function elementInViewport(element) {
           width,
           height
         )
-      )
+      ) {
         return true;
+      }
     }
+
     element = element.offsetParent;
     top += element.offsetTop;
     left += element.offsetLeft;
@@ -80,6 +84,17 @@ function contains(
   width,
   height
 ) {
+  console.log({
+    viewX,
+    viewY,
+    viewWidth,
+    viewHeight,
+
+    left,
+    top,
+    width,
+    height,
+  });
   return (
     top < viewY + viewHeight &&
     left < viewX + viewWidth &&

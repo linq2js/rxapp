@@ -64,7 +64,7 @@ export default function createTemplateRenderer(
 
   function updateBinding(binding, value) {
     if (unmounted) return;
-    let nextKey = value && value.key;
+    let nextKey = value ? value.key : undefined;
     if (typeof nextKey !== "undefined") {
       // do nothing if binding has the same previous key
       if (isEqual(binding.key, nextKey)) return;
@@ -96,11 +96,10 @@ export default function createTemplateRenderer(
           if (!binding.reactiveHandler) {
             binding.reactiveHandler = createReactiveHandler(
               (result) => {
-                if (binding.updateToken === context.updateToken) {
-                  return;
+                if (binding.updateToken !== context.updateToken) {
+                  binding.updateToken = context.updateToken;
+                  updateBinding(binding, result);
                 }
-                binding.updateToken = context.updateToken;
-                updateBinding(binding, result);
               },
               binding,
               context

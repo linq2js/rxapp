@@ -18,7 +18,6 @@ export default function createComponentRenderer(
   let currentRef;
   let removeUpdateListener;
   let removeScrollUpdateListener;
-  let isVisibleInViewport = !lazy;
   let component = {
     handle: emptyObject,
     props: currentProps,
@@ -28,13 +27,7 @@ export default function createComponentRenderer(
   let effects = createEffectManager(component, context);
   let reactiveHandler = createReactiveHandler(
     (result) => {
-      let prevComponent = globalContext.component;
-      try {
-        globalContext.component = component;
-        !component.unmounted && mount(context, inner, result);
-      } finally {
-        globalContext.component = prevComponent;
-      }
+      !component.unmounted && mount(context, inner, result);
       if (!component.mounted) {
         component.mounted = true;
         removeUpdateListener = context.addBinding(effects.run);
@@ -42,7 +35,8 @@ export default function createComponentRenderer(
       }
     },
     currentProps,
-    context
+    context,
+    component
   );
 
   if (lazy) {
@@ -76,9 +70,7 @@ export default function createComponentRenderer(
         delete currentProps[p];
       }
       assign(currentProps, props);
-      isVisibleInViewport &&
-        (!component.mounted || forceUpdate) &&
-        reactiveHandler(render);
+      !lazy && (!component.mounted || forceUpdate) && reactiveHandler(render);
     },
   };
 }
