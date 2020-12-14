@@ -12,6 +12,7 @@ export let storeType = Symbol("store");
 export let loadableType = Symbol("loadable");
 export let reactiveType = Symbol("reactive");
 export let isMemo = Symbol("memo");
+export let isDebounce = Symbol("debounce");
 export let noChangeType = Symbol('noChange')
 export let loadedType = "loaded";
 export let loadingType = "loading";

@@ -3,7 +3,7 @@ import { createReactiveHandler } from "./createReactiveHandler";
 import isEqual from "./isEqual";
 import patchNode from "./patchNode";
 import { directiveType, templateType, placeholderType } from "./types";
-import { doc, emptyArray, indexOf, unset } from "./util";
+import { doc, emptyArray, enqueue, indexOf, unset } from "./util";
 
 let templateTagName = "template";
 let slotAttributeName = "hta-slot";
@@ -23,7 +23,13 @@ export default function createTemplateRenderer(
     template = renderTemplate(marker, html, query, slots);
     cache[id] = template;
   }
-  let nodes = template.childNodes.map((node) => node.cloneNode(true));
+  let nodes;
+  let nodeGroup = context.removedNodes && context.removedNodes.get(id);
+  if (nodeGroup && nodeGroup.length) {
+    nodes = nodeGroup.pop();
+  } else {
+    nodes = template.childNodes.map((node) => node.cloneNode(true));
+  }
   marker.before(...nodes);
   let bindings = [];
   let i = template.attachedNodes.length;
@@ -127,8 +133,11 @@ export default function createTemplateRenderer(
         binding.unsubscribe && binding.unsubscribe();
         binding.renderer && binding.renderer.unmount();
       }
-      i = nodes.length;
-      while (i--) nodes[i].remove();
+      // i = nodes.length;
+      // while (i--) nodes[i].remove();
+      let nodeGroup = context.removedNodes.get(id);
+      if (!nodeGroup) context.removedNodes.set(id, (nodeGroup = []));
+      nodeGroup.push(nodes);
     },
   };
 }
@@ -169,9 +178,9 @@ function parseTemplate(parts) {
 
   return {
     id,
-    html: parts.reduce(
-      (prev, current, index) => prev + html[index - 1] + current
-    ),
+    html: parts
+      .reduce((prev, current, index) => prev + html[index - 1] + current)
+      .trim(),
     query: query.join(","),
     slots,
   };

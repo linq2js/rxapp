@@ -2,8 +2,8 @@ import { DynamicPart } from "../core";
 
 export function delay<T>(ms?: number, resolved?: T): Promise<T>;
 export function debounce<T extends (...args: any) => any>(
-  fn: T,
-  ms?: number
+  ms: number,
+  fn: T
 ): (...args: Parameters<T>) => Promise<ReturnType<T>>;
 
 export function lazy<TProps>(

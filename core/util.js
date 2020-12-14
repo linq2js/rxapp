@@ -33,10 +33,13 @@ export function getters(obj, getters) {
   return obj;
 }
 
-//
-// export let enqueue =
-//   typeof requestAnimationFrame === "undefined"
-//     ? Promise.resolve().then.bind(Promise.resolve())
-//     : requestAnimationFrame;
+export let microEnqueue = Promise.resolve().then.bind(Promise.resolve());
+export let rafEnqueue =
+  typeof requestAnimationFrame === "undefined"
+    ? microEnqueue
+    : requestAnimationFrame;
+let internalEnqueue = microEnqueue;
 
-export let enqueue = Promise.resolve().then.bind(Promise.resolve());
+export function enqueue(f, raf) {
+  return raf ? rafEnqueue(f) : internalEnqueue(f);
+}

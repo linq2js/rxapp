@@ -42,7 +42,7 @@ const Table = part(() => {
     )}</tbody>`;
 
   return part`
-  <div style="height: 500px; overflow: auto; border: 1px solid silver;">
+  <div class="rxapp-lazy" style="height: 500px; overflow: auto; border: 1px solid silver; position: relative;">
     <table class="table table-hover table-striped test-data">
       ${() => Chunk({ data, size: 50, render })}
     </table>

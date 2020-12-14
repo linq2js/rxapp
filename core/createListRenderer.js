@@ -47,7 +47,6 @@ export default function createListRenderer(mount, context, marker) {
           prevKeyToIndex.set(prevChild.key, i++);
         }
       }
-
       while (orphanChildrenIndices.length) {
         let prevIndex = orphanChildrenIndices.pop();
         let prevChild = prevChildren[prevIndex];
@@ -62,6 +61,7 @@ export default function createListRenderer(mount, context, marker) {
         let prevIndex = prevKeyToIndex.get(nextChild.key);
         // is new, append to container
         if (prevIndex === void 0) {
+          // reuse unmounted child
           lastMarker = nextChild.marker = createMarker("item " + i);
           container.appendChild(nextChild.marker);
           mount(context, nextChild, nextChild.item);

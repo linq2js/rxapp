@@ -1,5 +1,7 @@
+import debounce from "../async/debounce";
 import createComponent from "./createComponent";
 import createMemo from "./createMemo";
+import { getters } from "./util";
 
 let Group = createComponent(
   (props) => () => props.render(props.items, props.index),
@@ -9,26 +11,26 @@ let Group = createComponent(
 );
 
 let Chunk = createComponent((props) => {
-  let createChunks = createMemo((data = [], size = 100) => {
+  let createChunks = createMemo((data = [], size = 25) => {
     let index = 0;
     let groups = [];
+    let length = data.length;
     // let getKey = typeof key === "function" ? key : (item) => item[key];
-    while (index < data.length) {
+    while (index < length) {
       let items = data.slice(index, index + size);
-      groups.push(
-        Group({
-          key: groups.length,
-          render: props.render,
-          index: groups.length,
-          items,
-        })
-      );
+      let groupProps = {
+        key: groups.length,
+        render: props.render,
+        index: groups.length,
+        items,
+      };
+      groups.push(Group(groupProps));
       index += size;
     }
     return groups;
   });
-
-  return () => createChunks(props.data, props.size);
+  let render = () => createChunks(props.data, props.size);
+  return props.debounce ? debounce(props.debounce, render) : render;
 });
 
 export default Chunk;

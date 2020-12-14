@@ -46,19 +46,17 @@ const Text = (props) => () => {
   return part`${before}<span style="color: red">${middle}</span>${after}`;
 };
 
-const Row = part(
-  ({ coin }) => part`
+const createRow = (coin) => part.key(coin.Id)`
   <tr>
     <td style="width: 80px">${Text({ text: coin.Id })}</td>
     <td style="width: 150px">${Text({ text: coin.Symbol })}</td>
     <td>${Text({ text: coin.FullName })}</td>
     <td style="width: 180px">${coin.TotalCoinsMined}</td>
-    <td style="width: 100px"><img style="width: 30px" ${{
+    <td style="width: 100px"><img style="width: 30px; height: 30px" ${{
       src: `https://cryptocompare.com${coin.ImageUrl || ""}`,
     }}/></td>
   </tr>
-`
-);
+`;
 
 const Header = ({ width, column }) => {
   let headerPropsBinding = () => ({
@@ -76,18 +74,18 @@ const Header = ({ width, column }) => {
 };
 
 const Table = part(() => {
-  const totalCoinBinding = () => coins.value.length;
-  const render = (items) =>
-    part`<tbody>${items.map((coin) => Row({ coin, key: coin.Id }))}</tbody>`;
+  const render = (items) => part`<tbody>${items.map(createRow)}</tbody>`;
 
   return part`
   <h1>Crypto Search</h1>
   <div class="form-group">
     <input type="email"
       class="form-control"
-      placeholder="Search coin" ${{ oninput: debounce(Search, 200) }}/>
+      placeholder="Search coin" ${{ oninput: debounce(200, Search) }}/>
   </div>
-  <small style="margin-left: 10px;" class="form-text text-muted">${totalCoinBinding} coins found</small>
+  <small style="margin-left: 10px;" class="form-text text-muted">
+    ${() => filteredCoins.value.length} /
+    ${() => coins.value.length} coins found</small>
   <table class="table table-striped table-bordered table-sm">
     <thead>
       <tr>
@@ -98,7 +96,7 @@ const Table = part(() => {
       ${Header({ column: "Image", orderBy, desc, width: 100 })}
       </tr>
     </thead>
-    ${() => Chunk({ data: filteredCoins.value, size: 25, render })}
+    ${() => Chunk({ data: filteredCoins.value, render })}
   </table>`;
 });
 
@@ -107,30 +105,27 @@ ${Suspense({ fallback: "Loading...", children: Table })}
 `.mount({
   container: "#app",
   init({ update }) {
-    fetch("https://min-api.cryptocompare.com/data/all/coinlist", {
-      mode: "cors",
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        let result = Object.entries(data.Data)
-          .slice(0, maxCoins)
-          .map(([Symbol, coin]) => ({
-            ...coin,
-            FullName: coin.FullName.trim(),
-            Symbol,
-          }));
-        coins.load(result);
-        update();
-
-        return result;
-      });
+    coins.load(
+      fetch("https://min-api.cryptocompare.com/data/all/coinlist", {
+        mode: "cors",
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          return Object.entries(data.Data)
+            .slice(0, maxCoins)
+            .map(([Symbol, coin]) => ({
+              ...coin,
+              FullName: coin.FullName.trim(),
+              Symbol,
+            }));
+        })
+    );
   },
 });
 
 // define actions
 function Search(e) {
   term = e.target.value;
-  filteredCoins.value;
 }
 
 function Sort(e, column) {
@@ -143,5 +138,4 @@ function Sort(e, column) {
     desc = false;
     orderBy = column;
   }
-  filteredCoins.value;
 }

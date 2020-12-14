@@ -111,6 +111,7 @@ export function handle(imperativeHandle: any): void;
 
 export const Chunk: DynamicPart<{
   size?: number;
+  debounce?: number;
   data: any[];
   render: (items: any[], index?: number) => any;
 }>;

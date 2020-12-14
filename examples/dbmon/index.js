@@ -5,12 +5,7 @@ let rows = [];
 part`
   <div>
     <table class="table table-striped latest-data">
-      ${() =>
-        Chunk({
-          data: rows,
-          size: 10,
-          render: (rows) => part`
-        <tbody>
+      <tbody>
         ${() =>
           rows.map(
             (row) => part.key(row.dbname)`
@@ -42,8 +37,7 @@ part`
             )}
           </tr>`
           )}
-      </tbody>`,
-        })}
+      </tbody>
     </table>
   </div>
 `.mount({

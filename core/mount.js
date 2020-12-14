@@ -7,6 +7,8 @@ import mountContent from "./mountContent";
 import { loadableType, loadingType } from "./types";
 import { doc, emptyObject, enqueue, isArray } from "./util";
 
+let threshold = 1500;
+
 export default function mount(content, options = emptyObject) {
   if (typeof options === "string") options = { container: options };
   let {
@@ -51,9 +53,21 @@ export default function mount(content, options = emptyObject) {
     let token = (context.updateToken = Symbol());
     enqueue(() => {
       if (token !== context.updateToken) return;
-      updateEmitter.emit();
+      let removedNodes = (context.removedNodes = new Map());
+      try {
+        updateEmitter.emit();
+      } finally {
+        if (removedNodes.size) {
+          for (let nodeGroup of removedNodes.values()) {
+            while (nodeGroup.length) {
+              let nodes = nodeGroup.pop();
+              while (nodes.length) nodes.pop().remove();
+            }
+          }
+        }
+      }
       effects.run();
-    });
+    }, updateEmitter.length() > threshold);
   }
 
   function dispatch(action, payload) {

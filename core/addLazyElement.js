@@ -29,19 +29,9 @@ function elementInViewport(element) {
   let width = element.offsetWidth;
   let height = element.offsetHeight;
   while (element.offsetParent) {
-    if (element.tagName !== "TABLE" && element.parentNode.tagName !== "TABLE") {
-      let {
-        scrollTop,
-        scrollLeft,
-        clientWidth,
-        clientHeight,
-        scrollHeight,
-        scrollWidth,
-      } = element.parentNode;
-      let isOverflown =
-        scrollHeight > clientHeight || scrollWidth > clientWidth;
+    if (element.classList.contains("rxapp-lazy")) {
+      let { scrollTop, scrollLeft, clientWidth, clientHeight } = element;
       if (
-        isOverflown &&
         contains(
           scrollLeft,
           scrollTop,
@@ -84,17 +74,6 @@ function contains(
   width,
   height
 ) {
-  console.log({
-    viewX,
-    viewY,
-    viewWidth,
-    viewHeight,
-
-    left,
-    top,
-    width,
-    height,
-  });
   return (
     top < viewY + viewHeight &&
     left < viewX + viewWidth &&
