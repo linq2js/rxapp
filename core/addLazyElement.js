@@ -1,7 +1,7 @@
 import createEmitter from "./createEmitter";
 
 let onScrollListenerAdded = false;
-let scrollEmitter = createEmitter().get("scroll");
+let scrollEmitter = createEmitter();
 
 export default function addLazyElement(element, update) {
   if (!onScrollListenerAdded) {

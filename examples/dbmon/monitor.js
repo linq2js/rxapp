@@ -32,6 +32,8 @@ window.Monitoring = (function () {
     var rate = 0;
     var bucketSize = 20;
     var bucket = [];
+    var min = 0,
+      max = 0;
     var lastTime = Date.now();
     return {
       domElement: container,
@@ -51,7 +53,11 @@ window.Monitoring = (function () {
           sum = sum + bucket[i];
         }
         self.rate = sum / bucket.length;
-        msText.textContent = "Repaint rate: " + self.rate.toFixed(2) + "/sec";
+        if (!min || self.rate < min) min = self.rate;
+        if (self.rate > max) max = self.rate;
+        msText.textContent = `Repaint rate: ${self.rate.toFixed(
+          2
+        )}/sec (${min.toFixed(2)} - ${max.toFixed(2)})`;
         lastTime = stop;
       },
       rate: function () {

@@ -5,6 +5,9 @@ export function debounce<T extends (...args: any) => any>(
   ms: number,
   fn: T
 ): (...args: Parameters<T>) => Promise<ReturnType<T>>;
+export function debounce<T extends (...args: any) => any>(
+  fn: T
+): (...args: Parameters<T>) => Promise<ReturnType<T>>;
 
 export function lazy<TProps>(
   importFn: (props?: TProps) => any,

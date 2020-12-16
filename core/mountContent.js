@@ -30,32 +30,49 @@ export default function mountContent(context, data, content) {
       : content.type || textType;
 
   if (type === rendererType) return content.render(mountContent, context, data);
-  if (data.renderer) {
+  let renderer = data.renderer;
+  if (renderer) {
     let shouldUnmount =
-      data.renderer.type !== type ||
-      (type === componentType && data.renderer.render !== content.render) ||
-      (type === templateType && data.renderer.id !== content.id);
+      renderer.type !== type ||
+      (type === componentType && renderer.render !== content.render) ||
+      (type === templateType && renderer.id !== content.id);
     if (shouldUnmount) {
-      data.renderer.unmount();
-      data.renderer = null;
+      renderer.unmount();
+      data.renderer = renderer = null;
     }
   }
 
   data.content = content;
 
-  if (!data.renderer) {
-    data.renderer = (type === reactiveType
-      ? createReactiveRenderer
-      : type === componentType
-      ? createComponentRenderer
-      : type === templateType
-      ? createTemplateRenderer
-      : type === listType
-      ? createListRenderer
-      : type === htmlType
-      ? createHtmlRenderer
-      : createTextRenderer)(mountContent, context, data.marker, content, data);
+  if (!renderer) {
+    let factory;
+    switch (type) {
+      case reactiveType:
+        factory = createReactiveRenderer;
+        break;
+      case componentType:
+        factory = createComponentRenderer;
+        break;
+      case templateType:
+        factory = createTemplateRenderer;
+        break;
+      case listType:
+        factory = createListRenderer;
+        break;
+      case htmlType:
+        factory = createHtmlRenderer;
+        break;
+      default:
+        factory = createTextRenderer;
+    }
+    data.renderer = renderer = factory(
+      mountContent,
+      context,
+      data.marker,
+      content,
+      data
+    );
   }
 
-  data.renderer.update && data.renderer.update(content);
+  renderer.update && renderer.update(content);
 }

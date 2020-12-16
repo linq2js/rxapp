@@ -1,7 +1,7 @@
 import arrayEqual from "./arrayEqual";
 import isEqual from "./isEqual";
 import { isMemo } from "./types";
-import { assign } from "./util";
+import { assign, unset } from "./util";
 
 export default function createMemo(fn) {
   if (arguments.length > 1)
@@ -24,7 +24,9 @@ function createMemoWithSelector(selector, fn) {
   return assign(
     function () {
       let value = selector.apply(null, arguments);
-      if (last && isEqual(value, last.value)) return last.result;
+      if (last && isEqual(value, last.value)) {
+        return last.result;
+      }
       last = { value, result: fn(value, ...arguments) };
       return last.result;
     },
@@ -36,14 +38,26 @@ function createMemoWithSelector(selector, fn) {
 
 assign(createMemo, {
   list(fn) {
+    if (arguments.length > 1) fn = createMemo(...arguments);
     let cache = [];
+    let prev;
     return createMemo((array, ...args) => {
       cache.length = array.length;
-      return array.map((value, index) => {
+      let changes = 0;
+      let result = array.map((value, index) => {
         let itemCache = cache[index];
-        if (!itemCache) cache[index] = itemCache = createMemo(fn);
-        return itemCache(value, index, ...args);
+        if (!itemCache) {
+          cache[index] = itemCache = createMemo(fn);
+          itemCache.prev = unset;
+        }
+        let next = itemCache(value, index, ...args);
+        if (next !== itemCache.prev) {
+          changes++;
+          itemCache.prev = next;
+        }
+        return next;
       });
+      return changes ? (prev = result) : prev;
     });
   },
 });

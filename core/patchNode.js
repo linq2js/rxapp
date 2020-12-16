@@ -1,33 +1,25 @@
 export default function patchNode(context, data, node, props) {
-  if (!node.$$initData) {
-    node.$$initData = {
-      class: node.getAttribute("class"),
-      style: node.getAttribute("style"),
+  if (!node.$$data) {
+    node.$$data = {
+      class: node.getAttribute("class") || "",
+      style: node.getAttribute("style") || "",
+      cache: {
+        style: new Map(),
+        props: new Map(),
+        class: new Map(),
+        event: new Map(),
+      },
     };
   }
+  let cache = node.$$data.cache;
   if (!props || data.prev === props) return;
   data.prev = props;
   for (let prop in props) {
     // if (!props.hasOwnProperty(prop)) continue;
     let propValue = props[prop];
-    let prevPropValue = data.props.get(prop);
+    let prevPropValue = cache.props.get(prop);
     if (propValue === prevPropValue) continue;
-    data.props.set(prop, propValue);
-    if (prop === "ref") {
-      propValue &&
-        (typeof propValue === "function"
-          ? propValue(node)
-          : (propValue.current = node));
-      continue;
-    }
-    if (prop === "text") {
-      node.textContent = propValue;
-      continue;
-    }
-    if (prop === "html") {
-      node.innerHTML = propValue;
-      continue;
-    }
+    cache.props.set(prop, propValue);
     if (prop[0] === "@") {
       node.setAttribute(prop.substr(1), propValue);
       continue;
@@ -40,36 +32,60 @@ export default function patchNode(context, data, node, props) {
       node.style[prop.substr(1)] = propValue;
       continue;
     }
-
     if (prop[0] === "o" && prop[1] === "n") {
       if (prop.length === 2) {
         if (!propValue) continue;
-        patchGroup(context, node, data.props, null, propValue, patchEvent);
+        patchGroup(context, node, cache.props, null, propValue, patchEvent);
       } else {
         patchEvent(context, node, prop.substr(2), propValue, prevPropValue);
       }
-    } else if (prop === "class") {
-      patchGroup(
-        context,
-        node,
-        data.class,
-        patchClassString,
-        propValue,
-        patchClass
-      );
-    } else if (prop === "attr") {
-      patchGroup(context, node, data.props, null, propValue, patchAttribute);
-    } else if (prop === "style") {
-      patchGroup(
-        context,
-        node,
-        data.style,
-        patchStyleString,
-        propValue,
-        patchStyle
-      );
     } else {
-      node[prop] = propValue;
+      switch (prop) {
+        case "ref":
+          propValue &&
+            (typeof propValue === "function"
+              ? propValue(node)
+              : (propValue.current = node));
+          break;
+        case "text":
+          node.textContent = propValue;
+          break;
+        case "html":
+          node.innerHTML = propValue;
+          break;
+        case "class":
+          patchGroup(
+            context,
+            node,
+            cache.class,
+            patchClassString,
+            propValue,
+            patchClass
+          );
+          break;
+        case "attr":
+          patchGroup(
+            context,
+            node,
+            cache.props,
+            null,
+            propValue,
+            patchAttribute
+          );
+          break;
+        case "style":
+          patchGroup(
+            context,
+            node,
+            cache.style,
+            patchStyleString,
+            propValue,
+            patchStyle
+          );
+          break;
+        default:
+          node[prop] = propValue;
+      }
     }
   }
 }
@@ -83,21 +99,15 @@ function patchAttribute(context, node, name, value) {
 }
 
 function patchClassString(node, value) {
-  node.setAttribute(
-    "class",
-    node.$$initData.class +
-      " " +
-      (typeof value === "boolean" || !value ? "" : value)
-  );
+  value = typeof value === "boolean" || !value ? "" : value;
+  let initClass = node.$$data.class;
+  node.setAttribute("class", initClass ? initClass + " " + value : value);
 }
 
 function patchStyleString(node, value) {
-  node.setAttribute(
-    "style",
-    node.$$initData.style +
-      ";" +
-      (typeof value === "boolean" || !value ? "" : value)
-  );
+  value = typeof value === "boolean" || !value ? "" : value;
+  let initStyle = node.$$data.style;
+  node.setAttribute("style", initStyle ? initStyle + ";" + value : value);
 }
 
 function patchStyle(context, node, name, value) {
@@ -126,10 +136,20 @@ function patchItem(context, node, map, itemName, itemValue, patcher) {
 }
 
 function patchEvent(context, node, name, current, prev) {
-  prev && node.removeEventListener(name, prev[context.appId]);
+  let eventCache = node.$$data.cache.event;
+  if (prev) {
+    let eventData = eventCache.get(prev);
+    if (eventData) {
+      node.removeEventListener(name, eventData.wrapper);
+      eventCache.delete(prev);
+    }
+  }
   if (current) {
-    let wrapper = (current[context.appId] = (e) =>
-      context.dispatch(current, e));
+    let wrapper = (e) => context.dispatch(current, e);
+    eventCache.set(current, {
+      wrapper,
+      name,
+    });
     node.addEventListener(name, wrapper);
   }
 }

@@ -1,7 +1,7 @@
 import createData from "./createData";
-import {createReactiveHandler} from "./createReactiveHandler";
-import { isMemo, noChangeType, reactiveType } from "./types";
-import { emptyObject, unset } from "./util";
+import { createReactiveHandler } from "./createReactiveHandler";
+import { reactiveType } from "./types";
+import { emptyObject } from "./util";
 
 export default function createReactiveRenderer(
   mount,
@@ -11,35 +11,24 @@ export default function createReactiveRenderer(
 ) {
   let inner = createData(marker, "reactive");
   let unmounted = false;
-  let reactiveFnWrapper;
-
+  let updateToken;
   let reactiveHandler = createReactiveHandler(
     (result) => {
-      if (unmounted) return;
-      // skip rendering if the result is noChange
-      result !== noChangeType && mount(context, inner, result);
+      if (unmounted || updateToken === context.updateToken) return;
+      updateToken = context.updateToken;
+      mount(context, inner, result);
     },
     emptyObject,
     context
   );
   let unsubscribe = context.addBinding(update);
 
-  // update();
-
   function update() {
     if (unmounted) return;
-    reactiveHandler(reactiveFnWrapper);
+    reactiveHandler(reactiveFn);
   }
 
-  function changeReactiveFn(fn) {
-    if (reactiveFnWrapper && fn === reactiveFn) return;
-    reactiveFn = fn;
-    reactiveFnWrapper = reactiveFn[isMemo]
-      ? createMemoWrapper(reactiveFn)
-      : reactiveFn;
-  }
-
-  changeReactiveFn(reactiveFn);
+  update();
 
   return {
     type: reactiveType,
@@ -51,17 +40,7 @@ export default function createReactiveRenderer(
     },
     reorder: inner.reorder,
     update(nextReactiveFn) {
-      changeReactiveFn(nextReactiveFn);
-      update();
+      reactiveFn = nextReactiveFn;
     },
-  };
-}
-
-function createMemoWrapper(fn) {
-  let lastResult = unset;
-  return function () {
-    let result = fn.apply(null, arguments);
-    if (lastResult === result) return noChangeType;
-    return (lastResult = result);
   };
 }

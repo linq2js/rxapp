@@ -19,7 +19,7 @@ export default function mount(content, options = emptyObject) {
     middleware,
   } = options;
 
-  let updateEmitter = createEmitter().get("update");
+  let updateEmitter = createEmitter();
   let data = {
     marker: createMarker("app"),
   };
@@ -34,6 +34,8 @@ export default function mount(content, options = emptyObject) {
     action: (fn) => (payload) => dispatch(fn, payload),
     actions: {},
     dispose,
+    subscribe: updateEmitter.on,
+    removedNodes: null,
   };
   let defaultComponent = {};
   if (typeof container === "string") container = doc.querySelector(container);

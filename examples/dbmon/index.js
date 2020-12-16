@@ -1,42 +1,49 @@
-import { Chunk, part } from "../../core";
+import { memo, part } from "../../core";
 
 let rows = [];
+
+const renderQueries = memo.list(
+  (query) => ({
+    class: query.elapsedClassName,
+    text: query.query,
+    elapsed: query.formatElapsed,
+  }),
+  (data) => part`
+      <td ${{ class: data.class }}>
+        ${data.elapsed}
+        <div class="popover left">
+          <div class="popover-content">
+            ${data.text}
+            <div class="arrow"></div>
+          </div>
+        </div>
+      </td>`
+);
+
+const renderRows = memo.list(
+  (row) => ({
+    key: row.dbname,
+    class: row.lastSample.countClassName,
+    text: row.lastSample.nbQueries,
+    queries: row.lastSample.topFiveQueries,
+  }),
+  (data) => part.key(data.key)`
+      <tr>
+        <td class="dbname">${data.key}</td>
+        <td class="query-count">
+          <span ${{ class: data.class }}>
+            ${data.text}
+          </span>
+        </td>
+        ${renderQueries(data.queries)}
+      </tr>`
+);
 
 part`
   <div>
     <table class="table table-striped latest-data">
       <tbody>
-        ${() =>
-          rows.map(
-            (row) => part.key(row.dbname)`
-          <tr>
-            <td class="dbname">${row.dbname}</td>
-            <td class="query-count">
-              <span ${{
-                key: row.lastSample.countClassName,
-                class: row.lastSample.countClassName,
-              }}>
-                ${row.lastSample.nbQueries}
-              </span>
-            </td>
-            ${row.lastSample.topFiveQueries.map(
-              (query) =>
-                part`
-                <td ${{
-                  key: query.elapsedClassName,
-                  class: query.elapsedClassName,
-                }}>
-                  ${query.formatElapsed}
-                  <div class="popover left">
-                    <div class="popover-content">
-                      ${query.query}
-                      <div class="arrow"></div>
-                    </div>
-                  </div>
-                </td>`
-            )}
-          </tr>`
-          )}
+        ${() => renderRows(rows)}
       </tbody>
     </table>
   </div>
@@ -50,9 +57,10 @@ part`
 
     next();
   },
+  effects: [[() => Monitoring.renderRate.ping(), () => false]],
   actions: {
     generate() {
-      rows = ENV.generateData().toArray(Monitoring.renderRate.ping());
+      rows = ENV.generateData().toArray();
     },
   },
 });

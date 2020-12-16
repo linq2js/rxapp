@@ -1,7 +1,7 @@
 import createArrayKeyedMap from "./createArrayKeyedMap";
 import { mountMethod } from "./mount";
 import { htmlType, templateType } from "./types";
-import { assign, slice } from "./util";
+import { slice } from "./util";
 
 let uid = 0;
 let cache = createArrayKeyedMap(() => uid++);
@@ -24,5 +24,5 @@ export default function createTemplate(key, args) {
     mount: mountMethod,
   };
 
-  return assign(() => template, template);
+  return template;
 }

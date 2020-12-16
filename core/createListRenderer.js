@@ -19,7 +19,7 @@ export default function createListRenderer(mount, context, marker) {
       prevList = list;
       prevLength = list.length;
 
-      let nextChildren = [];
+      let nextChildren = Array(list.length);
       let nextKeyToIndex = new Map();
       let container = marker.parentNode;
       let i;

@@ -1,7 +1,7 @@
 import createEmitter from "../core/createEmitter";
 import { assign, emptyObject } from "../core/util";
 
-let navigateEmitter = createEmitter().get("navigate");
+let navigateEmitter = createEmitter();
 let currentLocation = {};
 let historyWrapper = {
   location: currentLocation,

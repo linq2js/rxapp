@@ -82,15 +82,29 @@ export function part(
   ...slots: TemplateSlot[]
 ): StaticPart;
 
-/**
- * create memoized function
- * @param fn
- */
-export function memo<T extends Function>(fn: T): T;
-export function memo<T, TResult>(
-  selector: (...args: any[]) => T,
-  fn: (result?: T, ...args: any[]) => TResult
-): (...args: any[]) => TResult;
+export interface Memo {
+  /**
+   * create memoized function
+   * @param fn
+   */
+  <T extends Function>(fn: T): T;
+
+  <T, TResult>(
+    selector: (...args: any[]) => T,
+    fn: (result?: T, ...args: any[]) => TResult
+  ): (...args: any[]) => TResult;
+
+  list<TItem, TMapResult>(
+    map: (item: TItem, index?: number) => TMapResult
+  ): (list: TItem[]) => TMapResult[];
+
+  list<TItem, TSelectResult, TMapResult>(
+    select: (item: TItem, index?: number) => TSelectResult,
+    map: (item: TSelectResult, index?: number) => TMapResult
+  ): (list: TItem[]) => TMapResult[];
+}
+
+export const memo: Memo;
 
 export function effect(func: Function, deps?: () => any[]): void;
 

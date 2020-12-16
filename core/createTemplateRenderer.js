@@ -3,7 +3,7 @@ import { createReactiveHandler } from "./createReactiveHandler";
 import isEqual from "./isEqual";
 import patchNode from "./patchNode";
 import { directiveType, templateType, placeholderType } from "./types";
-import { doc, emptyArray, enqueue, indexOf, unset } from "./util";
+import { doc, emptyArray, indexOf, unset } from "./util";
 
 let templateTagName = "template";
 let slotAttributeName = "hta-slot";
@@ -45,17 +45,13 @@ export default function createTemplateRenderer(
     for (let j = 0; j < attachedNode.bindings.length; j++) {
       let b = attachedNode.bindings[j];
       let binding = {
-        prevValue: unset,
+        unsubscribe: null,
+        prev: unset,
         marker: node,
         type: b.type,
         index: b.index,
         props: {},
       };
-      if (b.type === directiveType) {
-        binding.props = new Map();
-        binding.style = new Map();
-        binding.class = new Map();
-      }
       bindings.unshift(binding);
     }
   }
@@ -64,6 +60,7 @@ export default function createTemplateRenderer(
     let i = bindings.length;
     while (i--) {
       let binding = bindings[i];
+      binding.prev = binding.value;
       binding.value = template.values[binding.index];
     }
   }
@@ -71,13 +68,11 @@ export default function createTemplateRenderer(
   function updateBinding(binding, value) {
     if (unmounted) return;
     let nextKey = value ? value.key : undefined;
-    if (typeof nextKey !== "undefined") {
+    if (nextKey !== void 0) {
       // do nothing if binding has the same previous key
       if (isEqual(binding.key, nextKey)) return;
       binding.key = nextKey;
-      if (value.bind) {
-        value = value.bind(nextKey);
-      }
+      if (value.bind) value = value.bind(nextKey);
     }
 
     if (binding.type === directiveType) {
@@ -98,14 +93,14 @@ export default function createTemplateRenderer(
       let i = bindings.length;
       while (i--) {
         let binding = bindings[i];
+        if (binding.prev === binding.value) continue;
         if (typeof binding.value === "function") {
           if (!binding.reactiveHandler) {
             binding.reactiveHandler = createReactiveHandler(
               (result) => {
-                if (binding.updateToken !== context.updateToken) {
-                  binding.updateToken = context.updateToken;
-                  updateBinding(binding, result);
-                }
+                if (binding.updateToken === context.updateToken) return;
+                binding.updateToken = context.updateToken;
+                updateBinding(binding, result);
               },
               binding,
               context
@@ -132,6 +127,17 @@ export default function createTemplateRenderer(
         let binding = bindings[i];
         binding.unsubscribe && binding.unsubscribe();
         binding.renderer && binding.renderer.unmount();
+        if (binding.type === directiveType) {
+          let node = binding.marker;
+          let data = node.$$data;
+          let eventCache = data && data.cache.event;
+          if (eventCache) {
+            for (let eventData of eventCache.values()) {
+              node.removeEventListener(eventData.name, eventData.wrapper);
+            }
+            eventCache.clear();
+          }
+        }
       }
       // i = nodes.length;
       // while (i--) nodes[i].remove();
