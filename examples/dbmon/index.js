@@ -1,4 +1,4 @@
-import { memo, part } from "../../core";
+import { effect, keyed, memo, part } from "../../core";
 
 let rows = [];
 
@@ -27,7 +27,10 @@ const renderRows = memo.list(
     text: row.lastSample.nbQueries,
     queries: row.lastSample.topFiveQueries,
   }),
-  (data) => part.key(data.key)`
+  (data) =>
+    keyed(
+      data.key,
+      part`
       <tr>
         <td class="dbname">${data.key}</td>
         <td class="query-count">
@@ -37,6 +40,7 @@ const renderRows = memo.list(
         </td>
         ${renderQueries(data.queries)}
       </tr>`
+    )
 );
 
 part`
@@ -57,10 +61,10 @@ part`
 
     next();
   },
-  effects: [[() => Monitoring.renderRate.ping(), () => false]],
   actions: {
     generate() {
       rows = ENV.generateData().toArray();
+      Monitoring.renderRate.ping();
     },
   },
 });

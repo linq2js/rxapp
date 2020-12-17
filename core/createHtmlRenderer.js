@@ -19,8 +19,9 @@ export default function createHtmlRenderer(mount, context, marker, { value }) {
     type: htmlType,
     update: noop,
     unmount() {
-      let i = childNodes.length;
-      while (i--) childNodes[i].remove();
+      childNodes.some((childNode) => {
+        childNode.remove();
+      });
     },
     reorder,
   };

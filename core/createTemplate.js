@@ -6,23 +6,22 @@ import { slice } from "./util";
 let uid = 0;
 let cache = createArrayKeyedMap(() => uid++);
 
-export default function createTemplate(key, args) {
-  if (typeof args[0] === "string") {
+export default function createTemplate(onUpdate, args) {
+  let strings = args[0];
+  if (strings.length === 1)
     return {
       type: htmlType,
-      value: args[0],
+      value: strings[0],
     };
-  }
-  let strings = args[0];
+
   let values = slice.call(args, 1);
-  let template = {
+
+  return {
     id: cache.get(strings),
-    key,
+    onUpdate,
     type: templateType,
     strings,
     values,
     mount: mountMethod,
   };
-
-  return template;
 }

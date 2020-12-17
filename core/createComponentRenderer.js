@@ -1,76 +1,87 @@
-import createData from "./createData";
-import createEffectManager from "./createEffectManager";
-import { createReactiveHandler } from "./createReactiveHandler";
+import arrayEqual from "./arrayEqual";
 import globalContext from "./globalContext";
-import addLazyElement from "./addLazyElement";
+import isPromiseLike from "./isPromiseLike";
+import createData from "./createData";
 import { componentType } from "./types";
-import { assign, emptyObject } from "./util";
 
 export default function createComponentRenderer(
   mount,
   context,
   marker,
-  content
+  render
 ) {
-  let { render, props, forceUpdate, lazy } = content;
   let inner = createData(marker, "component");
-  let currentProps = { ...props };
-  let currentRef;
-  let removeUpdateListener;
-  let removeScrollUpdateListener;
+  let state = {};
+  let asyncHandler = context.asyncHandler;
+  let effects = [];
+  let mounted = false;
   let component = {
-    handle: emptyObject,
-    props: currentProps,
-    mounted: false,
-    unmounted: false,
-  };
-  let effects = createEffectManager(component, context);
-  let reactiveHandler = createReactiveHandler(
-    (result) => {
-      !component.unmounted && mount(context, inner, result);
-      if (!component.mounted) {
-        component.mounted = true;
-        removeUpdateListener = context.addBinding(effects.run);
-        effects.run();
-      }
+    effect(fn, deps) {
+      if (!mounted && !deps) return fn(context);
+      effects[effectIndex] = { ...effects[effectIndex], fn, deps };
+      effectIndex++;
     },
-    currentProps,
-    context,
-    component
-  );
+  };
+  let lastPromise;
+  let updateToken;
+  let effectIndex = 0;
 
-  if (lazy) {
-    removeScrollUpdateListener = addLazyElement(marker, () =>
-      reactiveHandler(render)
-    );
+  function update() {
+    if (inner.unmounted || updateToken === context.updateToken) return;
+    updateToken = context.updateToken;
+    let prevComponent = globalContext.component;
+    try {
+      effectIndex = 0;
+      globalContext.component = component;
+      let result = render(state, context);
+      if (isPromiseLike(result)) {
+        let promise = (lastPromise = result);
+        promise.then((asyncResult) => {
+          if ((!component || !component.unmounted) && lastPromise === promise) {
+            mount(context, inner, asyncResult);
+            runEffects();
+          }
+        });
+        return;
+      }
+      lastPromise = null;
+      mount(context, inner, result);
+      runEffects();
+    } catch (e) {
+      if (isPromiseLike(e) && asyncHandler) return asyncHandler(e);
+      throw e;
+    } finally {
+      globalContext.component = prevComponent;
+    }
   }
+
+  function runEffects() {
+    mounted = true;
+    if (!effectIndex) return;
+    for (let effect of effects) {
+      if (arrayEqual(effect.prev, effect.deps)) continue;
+      effect.prev = effect.deps;
+      effect.dispose && effect.dispose();
+      effect.dispose = effect.fn(context);
+    }
+  }
+
+  context.addBinding(update);
 
   return {
     type: componentType,
     render,
     unmount() {
-      if (component.unmounted) return;
-      component.unmounted = true;
-      removeUpdateListener && removeUpdateListener();
-      removeScrollUpdateListener && removeScrollUpdateListener();
-      effects.dispose();
+      if (inner.unmounted) return;
       inner.unmount();
+      for (let effect of effects) {
+        effect.dispose && effect.dispose();
+      }
     },
     reorder: inner.reorder,
-    update({ ref, props }) {
-      if (ref !== currentRef) {
-        currentRef = ref;
-        typeof currentRef === "function"
-          ? currentRef(component.handle)
-          : (currentRef.current = component.handle);
-      }
-
-      for (let p in currentProps) {
-        if (p in props) continue;
-        delete currentProps[p];
-      }
-      assign(currentProps, props);
-      !lazy && (!component.mounted || forceUpdate) && reactiveHandler(render);
+    update(nextRender) {
+      nextRender = render;
+      update();
     },
   };
 }

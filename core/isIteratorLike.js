@@ -1,3 +1,3 @@
 export default function isIteratorLike(value) {
-  return value && typeof value.then === "function";
+  return value && value.next && value.next.call;
 }

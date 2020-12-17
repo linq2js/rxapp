@@ -1,4 +1,4 @@
-import { part, memo } from "../../core";
+import { part, memo, keyed } from "../../core";
 
 const Layout = {
   PHYLLOTAXIS: 0,
@@ -23,54 +23,45 @@ let numSteps = 60 * 2;
 let async = false;
 let points = makePoints();
 
-const Controls = (() => {
-  let numPointsBinding = () => ({
-    key: numPoints,
-    value: numPoints,
-    onchange: handleUIUpdate,
-  });
-  let asyncBinding = () => ({
-    key: async,
-    checked: async,
-    onchange: handleUIUpdate,
-  });
+const Controls = () => {
+  let onChange$ = { onchange: handleUIUpdate };
+  let numPoints$ = () => ({ value: numPoints });
+  let async$ = () => ({ checked: async });
 
   return part`
   <div class="controls">
     # Points
-    <input name="numPoints" type="range" min=10 max=10000 ${numPointsBinding}>
+    <input name="numPoints" type="range" min=10 max=10000 ${numPoints$} ${onChange$}>
     ${() => numPoints}
     <label>
-      <input name="async" type="checkbox" ${asyncBinding}>
+      <input name="async" type="checkbox" ${async$} ${onChange$}>
       Async
     </label>
   </div>
   `;
-})();
-
-const createRect = (key, point) => {
-  const fill$ = { "@fill": point.color };
-  const transform$ = () => ({
-    "@transform": `translate(${point.x}, ${point.y})`,
-  });
-  return part.key(key)`<rect class="point" ${fill$} ${transform$}/>`;
 };
 
-const Canvas = part(() => {
-  const getPoints = memo((points) =>
-    points.map((point, index) => createRect(index, point))
-  );
+const createRect = (point) => {
+  const fill$ = { "@fill": point.color };
+  const transform$ = () => {
+    let transform = `translate(${point.x}, ${point.y})`;
+    return { "@transform": transform };
+  };
+  return part`<rect class="point" ${fill$} ${transform$}/>`;
+};
 
+const Canvas = () => {
   return part`
   <svg class="demo">
-    <g>${() => getPoints(points)}</g>
+    <g>${() =>
+      points.map((point, index) => keyed(index, createRect(point)))}</g>
   </svg>`;
-});
+};
 
 const App = part`
 <div class="app-wrapper">
-  ${Canvas}
-  ${Controls}
+  ${Canvas()}
+  ${Controls()}
   <div class="about">
     based on the Preact demo by <a href="https://github.com/developit" target="_blank">Jason Miller</a>,
     based on the Glimmer demo by <a href="http://mlange.io" target="_blank">Michael Lange</a>.

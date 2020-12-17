@@ -1,7 +1,7 @@
 export default function createEmitter() {
   let listeners = [];
   let emitting = 0;
-  let removed;
+  let removed = 0;
   let cleanup = false;
 
   function on(listener) {
@@ -13,7 +13,8 @@ export default function createEmitter() {
       active = false;
       let index = listeners.indexOf(wrapper);
       if (emitting) {
-        removed.push(index);
+        removed++;
+        wrapper.removed = true;
       } else {
         listeners.splice(index, 1);
       }
@@ -27,15 +28,23 @@ export default function createEmitter() {
   function emit(payload) {
     try {
       emitting++;
-      if (!removed) removed = [];
-      let copy = listeners;
-      for (let i = 0; i < copy.length; i++) copy[i](payload);
+      removed = 0;
+      listeners.some((listener) => {
+        listener(payload);
+      });
+      // for (let i = 0; i < copy.length; i++) copy[i](payload);
     } finally {
       emitting--;
       if (!emitting) {
-        if (removed.length) {
-          removed.sort();
-          while (removed.length) listeners.splice(removed.pop(), 1);
+        if (removed) {
+          let temp = [];
+          listeners.some((listener) => {
+            if (!listener.removed) return;
+            removed--;
+            temp[temp.length] = listener;
+            if (!removed) return true;
+          });
+          listeners = temp;
         }
         removed = null;
         cleanup && clear();

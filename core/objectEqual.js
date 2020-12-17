@@ -1,6 +1,5 @@
 export default function objectEqual(a, b) {
   if (a === b) return true;
-
   for (let ka in a) {
     if (a[ka] !== b[ka]) return false;
   }

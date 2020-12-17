@@ -1,4 +1,4 @@
-import { part } from "../../core";
+import { keyed, part } from "../../core";
 
 const startTime = Date.now();
 const duration = 30000;
@@ -10,21 +10,21 @@ let secondsRunningBinding = () => secondsRunning;
 let numColorUpdatesBinding = () => numColorUpdates;
 let colorsPerSecondBinding = () => Math.floor(numColorUpdates / secondsRunning);
 
-const createCell = (n) => {
+const Cell = (n) => {
   const cellStyle = () => ({
     key: colors[n],
     style: { backgroundColor: colors[n] },
   });
-  return part.key(
-    n
-  )`<div style="width: 30px; height: 30px; text-align: center; padding: 10px; float: left;" ${cellStyle}>${n}</div>`;
+  return part`<div
+    style="width: 30px; height: 30px; text-align: center; padding: 10px; float: left;"
+    ${cellStyle}>${n}</div>`;
 };
 
 const Matrix = part`<div id="matrix" style="width: 500px">${new Array(
   numElements
 )
   .fill()
-  .map((_, n) => createCell(n))}</div>`;
+  .map((_, n) => keyed(n, Cell(n)))}</div>`;
 
 const Info = part`
   <h1 style="font-weight: 100">${secondsRunningBinding}</h1>

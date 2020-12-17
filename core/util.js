@@ -38,8 +38,4 @@ export let rafEnqueue =
   typeof requestAnimationFrame === "undefined"
     ? microEnqueue
     : requestAnimationFrame;
-let internalEnqueue = microEnqueue;
-
-export function enqueue(f, raf) {
-  return raf ? rafEnqueue(f) : internalEnqueue(f);
-}
+export let enqueue = microEnqueue;

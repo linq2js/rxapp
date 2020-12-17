@@ -8,6 +8,7 @@
     "examples/context": "parcel examples/context/index.html --open --out-dir .temp/context",
     "examples/crypto-search": "parcel examples/crypto-search/index.html --open --out-dir .temp/crypto-search",
     "examples/dbmon": "parcel examples/dbmon/index.html --open --out-dir .temp/dbmon",
+    "examples/dbmon-hyperapp": "parcel examples/dbmon-hyperapp/index.html --open --out-dir .temp/dbmon-hyperapp",
     "examples/keyed-list": "parcel examples/keyed-list/index.html --open --out-dir .temp/keyed-list",
     "examples/lazy-render": "parcel examples/lazy-render/index.html --open --out-dir .temp/lazy-render",
     "examples/performance": "parcel examples/performance/index.html --open --out-dir .temp/performance",

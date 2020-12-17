@@ -1,17 +1,21 @@
-import createComponent from "./createComponent";
 import createTemplate from "./createTemplate";
-import { assign } from "./util";
+import { htmlType } from "./types";
 
-export default function createPart() {
-  if (typeof arguments[0] === "function")
-    return createComponent.apply(null, arguments);
+export default function createPart(input) {
+  if (input) {
+    let type = typeof input;
+    if (type === "function") {
+      return function () {
+        return createTemplate(input, arguments);
+      };
+    }
+    if (type === "string") {
+      return {
+        type: htmlType,
+        value: input,
+      };
+    }
+  }
+
   return createTemplate(void 0, arguments);
 }
-
-assign(createPart, {
-  key(key) {
-    return function () {
-      return createTemplate(key, arguments);
-    };
-  },
-});

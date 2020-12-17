@@ -129,3 +129,7 @@ export const Chunk: DynamicPart<{
   data: any[];
   render: (items: any[], index?: number) => any;
 }>;
+export function keyed<TKey, TContent>(
+  key: TKey,
+  content: TContent
+): { key: TKey; content: TContent };

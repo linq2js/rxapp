@@ -1,9 +1,16 @@
+import arrayEqual from "./arrayEqual";
 import createMarker from "./createMarker";
-import { createReactiveHandler } from "./createReactiveHandler";
+import globalContext from "./globalContext";
 import isEqual from "./isEqual";
+import isPromiseLike from "./isPromiseLike";
 import patchNode from "./patchNode";
-import { directiveType, templateType, placeholderType } from "./types";
-import { doc, emptyArray, indexOf, unset } from "./util";
+import {
+  directiveType,
+  templateType,
+  placeholderType,
+  keyedType,
+} from "./types";
+import { doc, emptyArray, indexOf, isArray, unset } from "./util";
 
 let templateTagName = "template";
 let slotAttributeName = "hta-slot";
@@ -18,55 +25,68 @@ export default function createTemplateRenderer(
   { strings, id }
 ) {
   let template = cache[id];
+  let onUpdate;
   if (!template) {
     let { html, query, slots } = parseTemplate(strings);
     template = renderTemplate(marker, html, query, slots);
     cache[id] = template;
   }
-  let nodes;
-  let nodeGroup = context.removedNodes && context.removedNodes.get(id);
-  if (nodeGroup && nodeGroup.length) {
-    nodes = nodeGroup.pop();
-  } else {
-    nodes = template.childNodes.map((node) => node.cloneNode(true));
-  }
+  let nodes = template.clone();
   marker.before(...nodes);
   let bindings = [];
-  let i = template.attachedNodes.length;
   let rootNode = { childNodes: nodes };
   let unmounted = false;
+  let state = {};
+  let asyncHandler = context.asyncHandler;
+  let effects = [];
+  let mounted = false;
+  let unsubscribe;
+  let updateToken;
+  let reactiveBindings = emptyArray;
+  let component = {
+    effect(fn, deps) {
+      if (!mounted && !deps) return fn(context);
+      effects[effectIndex] = { ...effects[effectIndex], fn, deps };
+      effectIndex++;
+    },
+  };
+  let effectIndex = 0;
 
-  while (i--) {
-    let attachedNode = template.attachedNodes[i];
+  template.attachedNodes.some((attachedNode) => {
     let node = attachedNode.path.reduce(
       (parent, index) => parent.childNodes[index],
       rootNode
     );
-    for (let j = 0; j < attachedNode.bindings.length; j++) {
-      let b = attachedNode.bindings[j];
-      let binding = {
-        unsubscribe: null,
+    attachedNode.bindings.some((b) => {
+      bindings.unshift({
         prev: unset,
         marker: node,
         type: b.type,
         index: b.index,
         props: {},
-      };
-      bindings.unshift(binding);
-    }
-  }
+      });
+    });
+  });
 
   function bind(template) {
-    let i = bindings.length;
-    while (i--) {
-      let binding = bindings[i];
+    bindings.some((binding) => {
       binding.prev = binding.value;
       binding.value = template.values[binding.index];
-    }
+    });
+  }
+
+  function handleUpdate() {
+    if (updateToken === context.updateToken) return;
+    onUpdate && onUpdate();
+    reactiveBindings.some((binding) => {
+      updateBinding(binding, binding.value(state, context));
+    });
   }
 
   function updateBinding(binding, value) {
     if (unmounted) return;
+    if (value && value.type === keyedType) value = value.content;
+
     let nextKey = value ? value.key : undefined;
     if (nextKey !== void 0) {
       // do nothing if binding has the same previous key
@@ -74,11 +94,51 @@ export default function createTemplateRenderer(
       binding.key = nextKey;
       if (value.bind) value = value.bind(nextKey);
     }
+    if (!isArray(value) && binding.prev === value) return;
 
+    binding.prev = value;
+    if (isPromiseLike(value)) {
+      let promise = (binding.lastPromise = value);
+      return promise.then((asyncValue) => {
+        if (binding.lastPromise !== promise) return;
+        updateBinding(binding, asyncValue);
+      });
+    }
+    binding.lastPromise = null;
     if (binding.type === directiveType) {
-      patchNode(context, binding, binding.marker, value);
+      patchNode(context, binding.props, binding.marker, value);
     } else {
       mount(context, binding, value);
+    }
+    runEffects();
+  }
+
+  function runEffects() {
+    mounted = true;
+    if (!effectIndex) return;
+    effects.some((effect) => {
+      if (arrayEqual(effect.prev, effect.deps)) return;
+      effect.prev = effect.deps;
+      effect.dispose && effect.dispose();
+      effect.dispose = effect.fn(context);
+    });
+  }
+
+  function updateBindings() {
+    bindings.some((binding) => {
+      let value = binding.value;
+      if (value && value.call) {
+        reactiveBindings[reactiveBindings.length] = binding;
+        if (!unsubscribe) {
+          unsubscribe = context.addBinding(handleUpdate);
+        }
+        value = value(state, context);
+      }
+      updateBinding(binding, value);
+    });
+    if (!reactiveBindings.length && unsubscribe) {
+      unsubscribe();
+      unsubscribe = null;
     }
   }
 
@@ -89,61 +149,45 @@ export default function createTemplateRenderer(
       marker.before(...nodes);
     },
     update(template) {
+      if (unmounted) return;
+      onUpdate = template.onUpdate;
+      updateToken = context.updateToken;
+      let prevComponent = globalContext.component;
       bind(template);
-      let i = bindings.length;
-      while (i--) {
-        let binding = bindings[i];
-        if (binding.prev === binding.value) continue;
-        if (typeof binding.value === "function") {
-          if (!binding.reactiveHandler) {
-            binding.reactiveHandler = createReactiveHandler(
-              (result) => {
-                if (binding.updateToken === context.updateToken) return;
-                binding.updateToken = context.updateToken;
-                updateBinding(binding, result);
-              },
-              binding,
-              context
-            );
-            binding.reactiveBinding = () =>
-              binding.reactiveHandler(binding.value);
-            binding.unsubscribe = context.addBinding(binding.reactiveBinding);
-          }
-          binding.reactiveBinding();
-        } else {
-          if (binding.unsubscribe) {
-            binding.unsubscribe();
-            binding.unsubscribe = null;
-          }
-          updateBinding(binding, binding.value);
-        }
+      reactiveBindings = [];
+      try {
+        globalContext.component = component;
+        onUpdate && onUpdate();
+        updateBindings();
+        runEffects();
+      } catch (e) {
+        if (isPromiseLike(e) && asyncHandler) return asyncHandler(e);
+        throw e;
+      } finally {
+        globalContext.component = prevComponent;
       }
     },
     unmount() {
       if (unmounted) return;
       unmounted = true;
-      let i = bindings.length;
-      while (i--) {
-        let binding = bindings[i];
-        binding.unsubscribe && binding.unsubscribe();
+      unsubscribe && unsubscribe();
+      bindings.some((binding) => {
         binding.renderer && binding.renderer.unmount();
         if (binding.type === directiveType) {
           let node = binding.marker;
           let data = node.$$data;
           let eventCache = data && data.cache.event;
-          if (eventCache) {
-            for (let eventData of eventCache.values()) {
+          if (eventCache && eventCache.size) {
+            eventCache.forEach((eventData) => {
               node.removeEventListener(eventData.name, eventData.wrapper);
-            }
+            });
             eventCache.clear();
           }
         }
-      }
-      // i = nodes.length;
-      // while (i--) nodes[i].remove();
-      let nodeGroup = context.removedNodes.get(id);
-      if (!nodeGroup) context.removedNodes.set(id, (nodeGroup = []));
-      nodeGroup.push(nodes);
+      });
+      nodes.some((node) => {
+        node.remove();
+      });
     },
   };
 }
@@ -218,7 +262,10 @@ function renderTemplate(marker, html, query, slots) {
       });
   return {
     isSvg: !!ns,
-    childNodes: [...(templateElement.content || templateElement).childNodes],
+    clone() {
+      let cloned = templateElement.cloneNode(true);
+      return [...(cloned.content || cloned).childNodes];
+    },
     attachedNodes,
   };
 }

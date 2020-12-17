@@ -12,8 +12,7 @@ export default function createEffectManager(component, context) {
 
   function run() {
     if (component.unmounted) return;
-    for (let i = 0; i < effects.length; i++) {
-      let data = effects[i];
+    effects.some((data) => {
       let currentDeps = data.deps
         ? data.deps(context)
         : data.deps === null || data.deps === void 0
@@ -24,7 +23,7 @@ export default function createEffectManager(component, context) {
         data.dispose && data.dispose();
         data.dispose = data.effect(context);
       }
-    }
+    });
   }
 
   function dispose() {
